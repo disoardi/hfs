@@ -1,0 +1,116 @@
+# Test cluster con Kerberos: HDFS + FreeIPA KDC
+# FreeIPA agisce da KDC e DNS.
+# Al primo avvio FreeIPA impiega 3-5 minuti.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.kerb.yml up -d
+#   docker compose -f docker/docker-compose.kerb.yml exec freeipa /scripts/wait-for-ipa.sh
+#   docker compose -f docker/docker-compose.kerb.yml exec hdfs-client kinit -kt /keytabs/hfs.keytab hfs/hdfs-client
+#   HFS_NAMENODE=hdfs://namenode-kerb:8020 HFS_KERBEROS=true cargo test --features kerberos -- --include-ignored
+#   docker compose -f docker/docker-compose.kerb.yml down -v
+version: "3.8"
+
+networks:
+  kerb-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  freeipa-data:
+  namenode-kerb-data:
+  datanode-kerb-data:
+
+services:
+  freeipa:
+    image: freeipa/freeipa-server:fedora-39
+    hostname: ipa.hfs.test
+    container_name: hfs-kerb-ipa
+    networks:
+      kerb-net:
+        ipv4_address: 172.28.0.10
+    ports:
+      - "8888:80"     # IPA web UI (HTTP)
+    volumes:
+      - freeipa-data:/data
+      - ./init/kerb/:/scripts/:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    environment:
+      IPA_SERVER_INSTALL_OPTS: >-
+        --realm=HFS.TEST
+        --domain=hfs.test
+        --ds-password=Admin1234
+        --admin-password=Admin1234
+        --no-ntp
+        --unattended
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    healthcheck:
+      test: ["CMD", "ipactl", "status"]
+      interval: 30s
+      timeout: 20s
+      retries: 15
+      start_period: 180s  # FreeIPA è lento al primo avvio
+
+  namenode-kerb:
+    image: apache/hadoop:3.3.6
+    hostname: namenode-kerb.hfs.test
+    container_name: hfs-kerb-namenode
+    networks:
+      kerb-net:
+        ipv4_address: 172.28.0.20
+    ports:
+      - "9871:9870"   # WebHDFS
+      - "8021:8020"   # RPC
+    volumes:
+      - namenode-kerb-data:/tmp/hadoop-root/dfs/name
+      - ./init/kerb-hadoop-config/:/opt/hadoop/etc/hadoop/custom/:ro
+      - ./init/kerb/keytabs/:/keytabs/:ro
+    command: >
+      bash -c "
+        cp /opt/hadoop/etc/hadoop/custom/*.xml /opt/hadoop/etc/hadoop/ 2>/dev/null || true
+        hdfs namenode -format -force -nonInteractive &&
+        hdfs namenode
+      "
+    depends_on:
+      freeipa:
+        condition: service_healthy
+
+  datanode-kerb:
+    image: apache/hadoop:3.3.6
+    hostname: datanode-kerb.hfs.test
+    container_name: hfs-kerb-datanode
+    networks:
+      kerb-net:
+        ipv4_address: 172.28.0.21
+    volumes:
+      - datanode-kerb-data:/tmp/hadoop-root/dfs/data
+      - ./init/kerb-hadoop-config/:/opt/hadoop/etc/hadoop/custom/:ro
+      - ./init/kerb/keytabs/:/keytabs/:ro
+    command: >
+      bash -c "
+        cp /opt/hadoop/etc/hadoop/custom/*.xml /opt/hadoop/etc/hadoop/ 2>/dev/null || true
+        hdfs datanode
+      "
+    depends_on:
+      namenode-kerb:
+        condition: service_healthy
+
+  hdfs-client:
+    image: apache/hadoop:3.3.6
+    hostname: hdfs-client.hfs.test
+    container_name: hfs-kerb-client
+    networks:
+      kerb-net:
+        ipv4_address: 172.28.0.30
+    volumes:
+      - ./init/fixtures/:/fixtures/:ro
+      - ./init/kerb/keytabs/:/keytabs/:ro
+      - ./init/kerb/krb5.conf:/etc/krb5.conf:ro
+      - ./init/load-fixtures.sh:/load-fixtures.sh:ro
+    environment:
+      KRB5_CONFIG: /etc/krb5.conf
+    command: sleep infinity
+    depends_on:
+      - namenode-kerb

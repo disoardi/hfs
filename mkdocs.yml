@@ -1,0 +1,95 @@
+site_name: hfs — HDFS CLI senza JVM
+site_url: https://disoardi.github.io/hfs
+site_description: CLI Rust per interagire con HDFS senza JVM — ls, schema Parquet, drift detection, Kerberos
+site_author: Davide Isoardi
+repo_url: https://github.com/disoardi/hfs
+repo_name: disoardi/hfs
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+theme:
+  name: material
+  language: it
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Passa al tema scuro
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Passa al tema chiaro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search:
+      lang: [it, en]
+  - i18n:
+      default_language: it
+      default_language_only: false
+      docs_structure: folder
+      languages:
+        it:
+          name: Italiano
+          build: true
+        en:
+          name: English
+          build: true
+          nav_translations:
+            Introduzione: Introduction
+            Installazione: Installation
+            Comandi: Commands
+            Configurazione: Configuration
+            Kerberos: Kerberos
+            Sviluppo: Development
+
+nav:
+  - Introduzione: index.md
+  - Installazione: installazione.md
+  - Comandi: comandi.md
+  - Configurazione: configurazione.md
+  - Kerberos: kerberos.md
+  - Sviluppo: sviluppo.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+extra:
+  alternate:
+    - name: Italiano
+      link: /
+      lang: it
+    - name: English
+      link: /en/
+      lang: en
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/disoardi/hfs
