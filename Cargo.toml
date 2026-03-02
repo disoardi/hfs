@@ -1,0 +1,51 @@
+[workspace]
+members = [
+    "hfs-core",
+    "hfs-schema",
+    "hfs",
+]
+resolver = "2"
+
+[workspace.dependencies]
+# HDFS — protocollo nativo, no JVM
+hdfs-native = "0.9"
+
+# HTTP — WebHDFS fallback (sincrono, leggero, no tokio)
+ureq = { version = "2", features = ["json"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# XML — parsing core-site.xml
+quick-xml = "0.31"
+
+# Async runtime — solo per hdfs-native interno
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# Columnar formats — schema inspection
+parquet = { version = "50", default-features = false, features = ["arrow"] }
+apache-avro = "0.16"
+
+# Output CLI
+comfy-table = "7"
+indicatif = "0.17"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true    # binario più piccolo
+
+# ─────────────────────────────────────────────────────
+# SEZIONE PATCH — attiva solo durante sviluppo upstream
+# Rimuovere da main, usare solo su branch feat/fix-*
+# ─────────────────────────────────────────────────────
+# [patch.crates-io]
+# hdfs-native = { path = "../datafusion-hdfs-native" }

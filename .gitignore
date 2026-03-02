@@ -1,0 +1,4 @@
+/target/
+Cargo.lock
+# MAI committare con patch attiva su main
+# Verifica: grep -r "patch.crates-io" Cargo.toml

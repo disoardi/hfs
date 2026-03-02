@@ -1,0 +1,27 @@
+[package]
+name = "hfs-core"
+version = "0.1.0"
+edition = "2021"
+description = "HDFS client library — dual-mode RPC native + WebHDFS fallback"
+license = "Apache-2.0"
+
+[dependencies]
+hdfs-native  = { workspace = true }
+ureq         = { workspace = true }
+quick-xml    = { workspace = true }
+tokio        = { workspace = true }
+anyhow       = { workspace = true }
+thiserror    = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+
+[features]
+default     = ["kerberos"]
+kerberos    = ["dep:libgssapi-sys"]
+
+[dependencies.libgssapi-sys]
+version  = "0.7"
+optional = true
+
+[dev-dependencies]
+tokio-test = "0.4"
