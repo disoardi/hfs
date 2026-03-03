@@ -12,33 +12,35 @@
         <meta name="author" content="Davide Isoardi">
       
       
-        <link rel="canonical" href="https://disoardi.github.io/hfs/">
+        <link rel="canonical" href="https://disoardi.github.io/hfs/configurazione/">
       
       
+        <link rel="prev" href="../comandi/">
       
-        <link rel="next" href="installazione/">
+      
+        <link rel="next" href="../kerberos/">
       
       
         
-          <link rel="alternate" href="/" hreflang="it">
+          <link rel="alternate" href="./" hreflang="it">
         
-          <link rel="alternate" href="/en/" hreflang="en">
+          <link rel="alternate" href="../en/configurazione/" hreflang="en">
         
       
       
-      <link rel="icon" href="assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
     
     
       
-        <title>hfs — HDFS CLI senza JVM</title>
+        <title>Configurazione - hfs — HDFS CLI senza JVM</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,7 +59,7 @@
       
     
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -82,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#hfs-hdfs-cli-senza-jvm" class="md-skip">
+        <a href="#configurazione" class="md-skip">
           Vai al contenuto
         </a>
       
@@ -96,7 +98,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Intestazione">
-    <a href="." title="hfs — HDFS CLI senza JVM" class="md-header__button md-logo" aria-label="hfs — HDFS CLI senza JVM" data-md-component="logo">
+    <a href=".." title="hfs — HDFS CLI senza JVM" class="md-header__button md-logo" aria-label="hfs — HDFS CLI senza JVM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -116,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Introduzione
+              Configurazione
             
           </span>
         </div>
@@ -163,13 +165,13 @@
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="/" hreflang="it" class="md-select__link">
+            <a href="./" hreflang="it" class="md-select__link">
               Italiano
             </a>
           </li>
         
           <li class="md-select__item">
-            <a href="/en/" hreflang="en" class="md-select__link">
+            <a href="../en/configurazione/" hreflang="en" class="md-select__link">
               English
             </a>
           </li>
@@ -253,11 +255,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="." class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
         
   
   
@@ -276,7 +276,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="installazione/" class="md-tabs__link">
+      <a href="../installazione/" class="md-tabs__link">
         
   
   
@@ -295,7 +295,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="comandi/" class="md-tabs__link">
+      <a href="../comandi/" class="md-tabs__link">
         
   
   
@@ -312,9 +312,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="configurazione/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -333,7 +335,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="kerberos/" class="md-tabs__link">
+      <a href="../kerberos/" class="md-tabs__link">
         
   
   
@@ -352,7 +354,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="sviluppo/" class="md-tabs__link">
+      <a href="../sviluppo/" class="md-tabs__link">
         
   
   
@@ -387,7 +389,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigazione" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="hfs — HDFS CLI senza JVM" class="md-nav__button md-logo" aria-label="hfs — HDFS CLI senza JVM" data-md-component="logo">
+    <a href=".." title="hfs — HDFS CLI senza JVM" class="md-nav__button md-logo" aria-label="hfs — HDFS CLI senza JVM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -414,37 +416,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Introduzione
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="." class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -460,81 +435,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Indice">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Indice
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#perche-hfs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Perché hfs?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#perche-non-la-cli-java-hdfs-dfs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Perché non la CLI Java (hdfs dfs)?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#funzionalita-principali" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Funzionalità principali
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#installazione-rapida" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Installazione rapida
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guida-rapida" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Guida rapida
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -546,7 +446,7 @@
   
   
     <li class="md-nav__item">
-      <a href="installazione/" class="md-nav__link">
+      <a href="../installazione/" class="md-nav__link">
         
   
   
@@ -573,7 +473,7 @@
   
   
     <li class="md-nav__item">
-      <a href="comandi/" class="md-nav__link">
+      <a href="../comandi/" class="md-nav__link">
         
   
   
@@ -597,10 +497,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="configurazione/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configurazione
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -616,6 +543,59 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Indice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Indice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#priority-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Priority chain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-di-configurazione-hfsconfigtoml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File di configurazione ~/.hfs/config.toml
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variabili-dambiente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variabili d'ambiente
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -627,7 +607,7 @@
   
   
     <li class="md-nav__item">
-      <a href="kerberos/" class="md-nav__link">
+      <a href="../kerberos/" class="md-nav__link">
         
   
   
@@ -654,7 +634,7 @@
   
   
     <li class="md-nav__item">
-      <a href="sviluppo/" class="md-nav__link">
+      <a href="../sviluppo/" class="md-nav__link">
         
   
   
@@ -701,10 +681,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#perche-hfs" class="md-nav__link">
+  <a href="#priority-chain" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Perché hfs?
+        Priority chain
       
     </span>
   </a>
@@ -712,10 +692,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#perche-non-la-cli-java-hdfs-dfs" class="md-nav__link">
+  <a href="#file-di-configurazione-hfsconfigtoml" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Perché non la CLI Java (hdfs dfs)?
+        File di configurazione ~/.hfs/config.toml
       
     </span>
   </a>
@@ -723,32 +703,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#funzionalita-principali" class="md-nav__link">
+  <a href="#variabili-dambiente" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Funzionalità principali
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#installazione-rapida" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Installazione rapida
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guida-rapida" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Guida rapida
+        Variabili d'ambiente
       
     </span>
   </a>
@@ -775,105 +733,66 @@
   
 
 
-<h1 id="hfs-hdfs-cli-senza-jvm">hfs — HDFS CLI senza JVM<a class="headerlink" href="#hfs-hdfs-cli-senza-jvm" title="Permanent link">&para;</a></h1>
-<p><strong>hfs</strong> è uno strumento a riga di comando scritto in Rust per interagire con cluster HDFS
-senza richiedere Java Virtual Machine né client Hadoop installati.</p>
-<h2 id="perche-hfs">Perché hfs?<a class="headerlink" href="#perche-hfs" title="Permanent link">&para;</a></h2>
-<p>Il flusso tipico di debug su HDFS oggi richiede 4-6 comandi JVM separati, ciascuno
-con 4-8 secondi di startup. Con <code>hfs</code>, tutta l'informazione necessaria arriva in meno di 200ms.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Prima: 5 comandi JVM, ~30 secondi</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>hdfs<span class="w"> </span>dfs<span class="w"> </span>-ls<span class="w"> </span>/data/warehouse/transactions/
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>hdfs<span class="w"> </span>fsck<span class="w"> </span>/data/warehouse/transactions/<span class="w"> </span>-files<span class="w"> </span>-blocks
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>hadoop<span class="w"> </span>jar<span class="w"> </span>parquet-tools.jar<span class="w"> </span>schema<span class="w"> </span>hdfs://nn:8020/data/.../part-00001.parquet
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>hive<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;describe formatted transactions;&quot;</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>hdfs<span class="w"> </span>dfs<span class="w"> </span>-ls<span class="w"> </span>-t<span class="w"> </span>/data/warehouse/transactions/<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-5
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># Dopo: 1 comando, &lt;2 secondi</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>hfs<span class="w"> </span>inspect<span class="w"> </span>/data/warehouse/transactions/<span class="w"> </span>--against<span class="w"> </span>hive://default.transactions
+<h1 id="configurazione">Configurazione<a class="headerlink" href="#configurazione" title="Permanent link">&para;</a></h1>
+<div class="admonition tip">
+<p class="admonition-title">Stub</p>
+<p>Questa pagina verrà completata durante lo sprint di sviluppo.</p>
+</div>
+<h2 id="priority-chain">Priority chain<a class="headerlink" href="#priority-chain" title="Permanent link">&para;</a></h2>
+<p>hfs legge la configurazione nell'ordine seguente (priorità decrescente):</p>
+<ol>
+<li>Flag CLI (<code>--namenode</code>, <code>--backend</code>, <code>--user</code>)</li>
+<li>Variabili d'ambiente (<code>HFS_NAMENODE</code>, <code>HFS_BACKEND</code>, <code>HFS_USER</code>)</li>
+<li>File <code>~/.hfs/config.toml</code></li>
+<li><code>$HADOOP_CONF_DIR/core-site.xml</code></li>
+<li><code>/etc/hadoop/conf/core-site.xml</code></li>
+<li>Default: <code>http://localhost:9870</code> (WebHDFS), utente corrente</li>
+</ol>
+<h2 id="file-di-configurazione-hfsconfigtoml">File di configurazione <code>~/.hfs/config.toml</code><a class="headerlink" href="#file-di-configurazione-hfsconfigtoml" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">namenode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;hdfs://namenode.prod.internal:8020&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">webhdfs_url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;http://namenode.prod.internal:9870&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">kerberos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">hive_metastore_url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;http://hive-metastore.prod.internal:8080&quot;</span>
 </code></pre></div>
-<h2 id="perche-non-la-cli-java-hdfs-dfs">Perché non la CLI Java (<code>hdfs dfs</code>)?<a class="headerlink" href="#perche-non-la-cli-java-hdfs-dfs" title="Permanent link">&para;</a></h2>
-<p>La CLI Java <code>hdfs dfs</code> ha problemi strutturali di memoria che <code>hfs</code> elimina by design.</p>
+<h2 id="variabili-dambiente">Variabili d'ambiente<a class="headerlink" href="#variabili-dambiente" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Scenario</th>
-<th><code>hdfs dfs</code></th>
-<th><code>hfs</code></th>
+<th>Variabile</th>
+<th>Descrizione</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>ls</code> su directory con 2 milioni di file</td>
-<td>OOM — materializza tutta la lista in RAM</td>
-<td>Stream riga per riga, memoria costante</td>
+<td><code>HFS_NAMENODE</code></td>
+<td>URI del NameNode</td>
 </tr>
 <tr>
-<td><code>cat</code> su file da 10GB</td>
-<td>Carica in RAM per decompressione</td>
-<td>Streaming a chunk da 64MB</td>
+<td><code>HFS_BACKEND</code></td>
+<td>Backend: <code>rpc</code>, <code>webhdfs</code>, <code>auto</code></td>
 </tr>
 <tr>
-<td>Qualsiasi comando</td>
-<td>4-8 secondi di JVM startup</td>
-<td>50ms</td>
+<td><code>HFS_USER</code></td>
+<td>Utente HDFS</td>
 </tr>
 <tr>
-<td>Script con 1000 chiamate <code>ls</code></td>
-<td>~6000 secondi di overhead</td>
-<td>~50 secondi</td>
+<td><code>HFS_HMS_URL</code></td>
+<td>URL Hive Metastore (HTTP API)</td>
+</tr>
+<tr>
+<td><code>HFS_KERBEROS</code></td>
+<td><code>true</code> per abilitare autenticazione Kerberos</td>
+</tr>
+<tr>
+<td><code>HADOOP_CONF_DIR</code></td>
+<td>Directory configurazione Hadoop</td>
+</tr>
+<tr>
+<td><code>RUST_LOG</code></td>
+<td>Log level (es. <code>debug</code>, <code>info</code>)</td>
 </tr>
 </tbody>
 </table>
-<p><code>hfs</code> non è un wrapper della CLI Java: è una riscrittura che elimina questi problemi
-strutturalmente, aggiungendo funzionalità (schema inspection, drift detection) che
-la CLI Java non ha affatto.</p>
-<h2 id="funzionalita-principali">Funzionalità principali<a class="headerlink" href="#funzionalita-principali" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>Filesystem</strong> — <code>ls</code>, <code>du</code>, <code>stat</code>, <code>find</code>, <code>blocks</code>, <code>replicas</code>, <code>small-files</code>, <code>cat</code>, <code>get</code></li>
-<li><strong>Schema</strong> — lettura schema Parquet/Avro/ORC leggendo solo ~8KB (footer/header), indipendente dalla dimensione del file</li>
-<li><strong>Drift detection</strong> — confronto schema file vs tabella Hive Metastore</li>
-<li><strong>Health</strong> — metriche cluster NameNode via JMX</li>
-<li><strong>Dual backend</strong> — protocollo RPC nativo (hdfs-native) con fallback automatico a WebHDFS</li>
-<li><strong>Scala sicura</strong> — <code>LISTSTATUS_BATCH</code> per directory con migliaia di file, <code>--max-concurrency</code> per proteggere il NameNode, streaming per file grandi</li>
-<li><strong>Kerberos</strong> — supporto autenticazione enterprise (feature flag)</li>
-<li><strong>Output</strong> — testo tabellare o JSON (<code>--json</code>)</li>
-</ul>
-<h2 id="installazione-rapida">Installazione rapida<a class="headerlink" href="#installazione-rapida" title="Permanent link">&para;</a></h2>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Linux x86_64</label><label for="__tabbed_1_2">macOS ARM64</label><label for="__tabbed_1_3">Da sorgente</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-L<span class="w"> </span>https://github.com/disoardi/hfs/releases/latest/download/hfs-linux-x86_64<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-o<span class="w"> </span>/usr/local/bin/hfs<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/hfs
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-L<span class="w"> </span>https://github.com/disoardi/hfs/releases/latest/download/hfs-macos-arm64<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-o<span class="w"> </span>/usr/local/bin/hfs<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/hfs
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>cargo<span class="w"> </span>install<span class="w"> </span>--git<span class="w"> </span>https://github.com/disoardi/hfs<span class="w"> </span>hfs
-</code></pre></div>
-</div>
-</div>
-</div>
-<h2 id="guida-rapida">Guida rapida<a class="headerlink" href="#guida-rapida" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Lista file</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>hfs<span class="w"> </span>ls<span class="w"> </span>/data/warehouse/
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Schema di un file Parquet</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>hfs<span class="w"> </span>schema<span class="w"> </span>/data/warehouse/part-00001.parquet
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Salute del cluster</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>hfs<span class="w"> </span>health
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="c1"># Drift schema vs tabella Hive</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>hfs<span class="w"> </span>drift<span class="w"> </span>/data/warehouse/<span class="w"> </span>--against<span class="w"> </span>hive://default.transactions
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># Output JSON per script/pipeline</span>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>hfs<span class="w"> </span>ls<span class="w"> </span>/data/<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.[] | select(.replication &lt; 3)&#39;</span>
-</code></pre></div>
-<p>Consulta la sezione <a href="comandi/">Comandi</a> per la documentazione completa.</p>
 
 
 
@@ -945,10 +864,10 @@ la CLI Java non ha affatto.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiato", "clipboard.copy": "Copia", "search.result.more.one": "1 altro in questa pagina", "search.result.more.other": "# altri in questa pagina", "search.result.none": "Nessun documento trovato", "search.result.one": "1 documento trovato", "search.result.other": "# documenti trovati", "search.result.placeholder": "Scrivi per iniziare a cercare", "search.result.term.missing": "Non presente", "select.version": "Seleziona la versione"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiato", "clipboard.copy": "Copia", "search.result.more.one": "1 altro in questa pagina", "search.result.more.other": "# altri in questa pagina", "search.result.none": "Nessun documento trovato", "search.result.one": "1 documento trovato", "search.result.other": "# documenti trovati", "search.result.placeholder": "Scrivi per iniziare a cercare", "search.result.term.missing": "Non presente", "select.version": "Seleziona la versione"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
