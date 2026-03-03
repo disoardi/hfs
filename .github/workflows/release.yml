@@ -1,0 +1,122 @@
+name: Release
+
+# Triggered when a version tag is pushed (e.g. v0.1.0).
+# Builds static Linux x86_64 (musl) and macOS ARM64 binaries,
+# then creates a GitHub Release with both artifacts attached.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ── Linux x86_64 — static musl binary ──────────────────────────────────────
+  build-linux:
+    name: Build Linux x86_64 (musl)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable + musl target
+        run: |
+          rustup update stable
+          rustup target add x86_64-unknown-linux-musl
+          sudo apt-get update -q
+          sudo apt-get install -y musl-tools
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-musl-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-musl-
+
+      - name: Build static binary
+        run: cargo build --release --target x86_64-unknown-linux-musl -p hfs
+
+      - name: Verify static linkage
+        run: |
+          ldd target/x86_64-unknown-linux-musl/release/hfs || true
+          file target/x86_64-unknown-linux-musl/release/hfs
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hfs-linux-x86_64
+          path: target/x86_64-unknown-linux-musl/release/hfs
+          retention-days: 1
+
+  # ── macOS ARM64 ─────────────────────────────────────────────────────────────
+  build-macos:
+    name: Build macOS ARM64
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        run: rustup update stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-
+
+      - name: Build binary
+        run: cargo build --release -p hfs
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hfs-macos-arm64
+          path: target/release/hfs
+          retention-days: 1
+
+  # ── GitHub Release ──────────────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: [build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: hfs-linux-x86_64
+          path: artifacts/
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: hfs-macos-arm64
+          path: artifacts/
+
+      - name: Rename and mark executables
+        run: |
+          mv artifacts/hfs artifacts/hfs-linux-x86_64 2>/dev/null || \
+            mv artifacts/hfs-linux-x86_64/hfs artifacts/hfs-linux-x86_64 2>/dev/null || true
+          mv artifacts/hfs-macos-arm64/hfs artifacts/hfs-macos-arm64 2>/dev/null || true
+          chmod +x artifacts/hfs-linux-x86_64 artifacts/hfs-macos-arm64 2>/dev/null || true
+          ls -lh artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/hfs-linux-x86_64
+            artifacts/hfs-macos-arm64
+          generate_release_notes: true
+          fail_on_unmatched_files: true

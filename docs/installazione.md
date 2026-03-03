@@ -1,5 +1,25 @@
 # Installazione
 
+## Installazione rapida
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/disoardi/hfs/main/install.sh | sh
+```
+
+Lo script rileva automaticamente il sistema operativo e l'architettura,
+scarica il binario precompilato dalla pagina Release e lo installa in
+`/usr/local/bin/hfs` (o `~/.local/bin/hfs` se non hai i permessi di root).
+
+!!! tip "TuxBox"
+    Se usi [TuxBox](https://github.com/disoardi/tuxbox) puoi installare hfs
+    direttamente dal registry pubblico:
+    ```bash
+    tbox install hfs
+    tbox run hfs -- ls /
+    ```
+
+---
+
 ## Download binario precompilato
 
 I binari sono disponibili nella [pagina Release](https://github.com/disoardi/hfs/releases) del repository.
