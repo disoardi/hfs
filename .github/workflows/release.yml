@@ -96,21 +96,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: hfs-linux-x86_64
-          path: artifacts/
+          path: artifacts/linux/
 
       - name: Download macOS artifact
         uses: actions/download-artifact@v4
         with:
           name: hfs-macos-arm64
-          path: artifacts/
+          path: artifacts/macos/
 
       - name: Rename and mark executables
         run: |
-          mv artifacts/hfs artifacts/hfs-linux-x86_64 2>/dev/null || \
-            mv artifacts/hfs-linux-x86_64/hfs artifacts/hfs-linux-x86_64 2>/dev/null || true
-          mv artifacts/hfs-macos-arm64/hfs artifacts/hfs-macos-arm64 2>/dev/null || true
-          chmod +x artifacts/hfs-linux-x86_64 artifacts/hfs-macos-arm64 2>/dev/null || true
-          ls -lh artifacts/
+          mv artifacts/linux/hfs artifacts/hfs-linux-x86_64
+          mv artifacts/macos/hfs artifacts/hfs-macos-arm64
+          chmod +x artifacts/hfs-linux-x86_64 artifacts/hfs-macos-arm64
+          ls -lh artifacts/hfs-linux-x86_64 artifacts/hfs-macos-arm64
 
       - name: Create release
         uses: softprops/action-gh-release@v2
