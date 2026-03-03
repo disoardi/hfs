@@ -525,6 +525,74 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quick Install
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prebuilt-binaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prebuilt Binaries
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      Build from Source
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Build from Source">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#static-build-linux-musl" class="md-nav__link">
+    <span class="md-ellipsis">
+      Static Build (Linux musl)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-with-kerberos-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      Build with Kerberos Support
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verify-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify Installation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -542,7 +610,75 @@
 
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
-<p>See the <a href="../installazione/">Italian documentation</a> for now — English translation in progress.</p>
+<h2 id="quick-install">Quick Install<a class="headerlink" href="#quick-install" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/disoardi/hfs/main/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+</code></pre></div>
+<p>The script detects your OS and architecture automatically, downloads the prebuilt binary
+from the GitHub Releases page, and installs it to <code>/usr/local/bin/hfs</code>
+(or <code>~/.local/bin/hfs</code> if you don't have root access).</p>
+<div class="admonition tip">
+<p class="admonition-title">TuxBox</p>
+<p>If you use <a href="https://github.com/disoardi/tuxbox">TuxBox</a> you can install hfs
+directly from the public registry:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>tbox<span class="w"> </span>install<span class="w"> </span>hfs
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>tbox<span class="w"> </span>run<span class="w"> </span>hfs<span class="w"> </span>--<span class="w"> </span>ls<span class="w"> </span>/
+</code></pre></div></p>
+</div>
+<hr />
+<h2 id="prebuilt-binaries">Prebuilt Binaries<a class="headerlink" href="#prebuilt-binaries" title="Permanent link">&para;</a></h2>
+<p>Binaries are available on the <a href="https://github.com/disoardi/hfs/releases">Releases page</a>.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Linux x86_64 (static, musl)</label><label for="__tabbed_1_2">macOS ARM64</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Fully static binary — works on any Linux distribution without system dependencies.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-L<span class="w"> </span>https://github.com/disoardi/hfs/releases/latest/download/hfs-linux-x86_64<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-o<span class="w"> </span>/usr/local/bin/hfs
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/hfs
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>hfs<span class="w"> </span>--version
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-L<span class="w"> </span>https://github.com/disoardi/hfs/releases/latest/download/hfs-macos-arm64<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-o<span class="w"> </span>/usr/local/bin/hfs
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/hfs
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>hfs<span class="w"> </span>--version
+</code></pre></div>
+</div>
+</div>
+</div>
+<hr />
+<h2 id="build-from-source">Build from Source<a class="headerlink" href="#build-from-source" title="Permanent link">&para;</a></h2>
+<p>Requires <a href="https://rustup.rs/">Rust</a> stable.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/disoardi/hfs.git
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>hfs
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Binary is at: target/release/hfs</span>
+</code></pre></div>
+<h3 id="static-build-linux-musl">Static Build (Linux musl)<a class="headerlink" href="#static-build-linux-musl" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rustup<span class="w"> </span>target<span class="w"> </span>add<span class="w"> </span>x86_64-unknown-linux-musl
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># Ubuntu/Debian: sudo apt install musl-tools</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--target<span class="w"> </span>x86_64-unknown-linux-musl
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Binary is at: target/x86_64-unknown-linux-musl/release/hfs</span>
+</code></pre></div>
+<h3 id="build-with-kerberos-support">Build with Kerberos Support<a class="headerlink" href="#build-with-kerberos-support" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Requires libgssapi-dev on the system</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Ubuntu: sudo apt install libgssapi-krb5-2 libkrb5-dev</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--features<span class="w"> </span>kerberos
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Kerberos and musl</p>
+<p>Building with <code>--features kerberos</code> is not compatible with the musl target
+because <code>libgssapi-sys</code> requires system libraries. Use the
+<code>x86_64-unknown-linux-gnu</code> target with Kerberos.</p>
+</div>
+<hr />
+<h2 id="verify-installation">Verify Installation<a class="headerlink" href="#verify-installation" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>hfs<span class="w"> </span>--version
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># hfs 0.1.0</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Quick test with WebHDFS (if available)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>hfs<span class="w"> </span>--namenode<span class="w"> </span>http://your-namenode:9870<span class="w"> </span>--backend<span class="w"> </span>webhdfs<span class="w"> </span>ls<span class="w"> </span>/
+</code></pre></div>
 
 
 

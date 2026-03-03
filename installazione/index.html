@@ -464,6 +464,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#installazione-rapida" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installazione rapida
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#download-binario-precompilato" class="md-nav__link">
     <span class="md-ellipsis">
       Download binario precompilato
@@ -629,6 +638,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#installazione-rapida" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installazione rapida
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#download-binario-precompilato" class="md-nav__link">
     <span class="md-ellipsis">
       Download binario precompilato
@@ -698,6 +716,21 @@
 
 
 <h1 id="installazione">Installazione<a class="headerlink" href="#installazione" title="Permanent link">&para;</a></h1>
+<h2 id="installazione-rapida">Installazione rapida<a class="headerlink" href="#installazione-rapida" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/disoardi/hfs/main/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+</code></pre></div>
+<p>Lo script rileva automaticamente il sistema operativo e l'architettura,
+scarica il binario precompilato dalla pagina Release e lo installa in
+<code>/usr/local/bin/hfs</code> (o <code>~/.local/bin/hfs</code> se non hai i permessi di root).</p>
+<div class="admonition tip">
+<p class="admonition-title">TuxBox</p>
+<p>Se usi <a href="https://github.com/disoardi/tuxbox">TuxBox</a> puoi installare hfs
+direttamente dal registry pubblico:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>tbox<span class="w"> </span>install<span class="w"> </span>hfs
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>tbox<span class="w"> </span>run<span class="w"> </span>hfs<span class="w"> </span>--<span class="w"> </span>ls<span class="w"> </span>/
+</code></pre></div></p>
+</div>
+<hr />
 <h2 id="download-binario-precompilato">Download binario precompilato<a class="headerlink" href="#download-binario-precompilato" title="Permanent link">&para;</a></h2>
 <p>I binari sono disponibili nella <a href="https://github.com/disoardi/hfs/releases">pagina Release</a> del repository.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Linux x86_64 (statico, musl)</label><label for="__tabbed_1_2">macOS ARM64</label></div>
@@ -705,38 +738,38 @@
 <div class="tabbed-block">
 <p>Binario completamente statico, funziona su qualsiasi distribuzione Linux
 senza dipendenze di sistema.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-L<span class="w"> </span>https://github.com/disoardi/hfs/releases/latest/download/hfs-linux-x86_64<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>-o<span class="w"> </span>/usr/local/bin/hfs
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/hfs
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>hfs<span class="w"> </span>--version
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-L<span class="w"> </span>https://github.com/disoardi/hfs/releases/latest/download/hfs-linux-x86_64<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-o<span class="w"> </span>/usr/local/bin/hfs
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/hfs
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>hfs<span class="w"> </span>--version
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-L<span class="w"> </span>https://github.com/disoardi/hfs/releases/latest/download/hfs-macos-arm64<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-o<span class="w"> </span>/usr/local/bin/hfs
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/hfs
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>hfs<span class="w"> </span>--version
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-L<span class="w"> </span>https://github.com/disoardi/hfs/releases/latest/download/hfs-macos-arm64<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-o<span class="w"> </span>/usr/local/bin/hfs
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>chmod<span class="w"> </span>+x<span class="w"> </span>/usr/local/bin/hfs
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>hfs<span class="w"> </span>--version
 </code></pre></div>
 </div>
 </div>
 </div>
 <h2 id="build-da-sorgente">Build da sorgente<a class="headerlink" href="#build-da-sorgente" title="Permanent link">&para;</a></h2>
 <p>Richiede <a href="https://rustup.rs/">Rust</a> stable.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/disoardi/hfs.git
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>hfs
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Il binario è in: target/release/hfs</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/disoardi/hfs.git
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>hfs
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Il binario è in: target/release/hfs</span>
 </code></pre></div>
 <h3 id="build-statico-linux-musl">Build statico (Linux musl)<a class="headerlink" href="#build-statico-linux-musl" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>rustup<span class="w"> </span>target<span class="w"> </span>add<span class="w"> </span>x86_64-unknown-linux-musl
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># Su Ubuntu/Debian: sudo apt install musl-tools</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--target<span class="w"> </span>x86_64-unknown-linux-musl
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Il binario è in: target/x86_64-unknown-linux-musl/release/hfs</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rustup<span class="w"> </span>target<span class="w"> </span>add<span class="w"> </span>x86_64-unknown-linux-musl
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># Su Ubuntu/Debian: sudo apt install musl-tools</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--target<span class="w"> </span>x86_64-unknown-linux-musl
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Il binario è in: target/x86_64-unknown-linux-musl/release/hfs</span>
 </code></pre></div>
 <h3 id="build-con-supporto-kerberos">Build con supporto Kerberos<a class="headerlink" href="#build-con-supporto-kerberos" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Richiede libgssapi-dev sul sistema</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># Ubuntu: sudo apt install libgssapi-krb5-2 libkrb5-dev</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--features<span class="w"> </span>kerberos
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Richiede libgssapi-dev sul sistema</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Ubuntu: sudo apt install libgssapi-krb5-2 libkrb5-dev</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--features<span class="w"> </span>kerberos
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Kerberos e build musl</p>
@@ -745,11 +778,11 @@ perché <code>libgssapi-sys</code> richiede la libreria di sistema. Usa il targe
 <code>x86_64-unknown-linux-gnu</code> con Kerberos.</p>
 </div>
 <h2 id="verifica-installazione">Verifica installazione<a class="headerlink" href="#verifica-installazione" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>hfs<span class="w"> </span>--version
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># hfs 0.1.0</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Test rapido con WebHDFS (se disponibile)</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>hfs<span class="w"> </span>--namenode<span class="w"> </span>http://your-namenode:9870<span class="w"> </span>--backend<span class="w"> </span>webhdfs<span class="w"> </span>ls<span class="w"> </span>/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>hfs<span class="w"> </span>--version
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># hfs 0.1.0</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Test rapido con WebHDFS (se disponibile)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>hfs<span class="w"> </span>--namenode<span class="w"> </span>http://your-namenode:9870<span class="w"> </span>--backend<span class="w"> </span>webhdfs<span class="w"> </span>ls<span class="w"> </span>/
 </code></pre></div>
 
 
