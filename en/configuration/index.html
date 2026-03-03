@@ -525,6 +525,83 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#priority-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Priority chain
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-backend-flag" class="md-nav__link">
+    <span class="md-ellipsis">
+      The --backend flag
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The --backend flag">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auto-detection-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Auto-detection logic
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      Backend comparison
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment variables
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-sitexml" class="md-nav__link">
+    <span class="md-ellipsis">
+      core-site.xml
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Diagnostics
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -542,7 +619,181 @@
 
 
 <h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h1>
-<p>See the <a href="../configurazione/">Italian documentation</a> for now — English translation in progress.</p>
+<h2 id="priority-chain">Priority chain<a class="headerlink" href="#priority-chain" title="Permanent link">&para;</a></h2>
+<p>hfs reads configuration in the following order (highest to lowest priority):</p>
+<ol>
+<li>CLI flags (<code>--namenode</code>, <code>--backend</code>)</li>
+<li>Environment variables (<code>HFS_NAMENODE</code>, <code>HFS_BACKEND</code>, <code>HFS_USER</code>)</li>
+<li><code>$HADOOP_CONF_DIR/core-site.xml</code></li>
+<li><code>/etc/hadoop/conf/core-site.xml</code></li>
+<li>Defaults: <code>http://localhost:9870</code> (WebHDFS), current OS user</li>
+</ol>
+<hr />
+<h2 id="the-backend-flag">The <code>--backend</code> flag<a class="headerlink" href="#the-backend-flag" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>hfs<span class="w"> </span>--backend<span class="w"> </span>auto<span class="w">     </span><span class="c1"># default: try RPC, fall back to WebHDFS</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>hfs<span class="w"> </span>--backend<span class="w"> </span>webhdfs<span class="w">  </span><span class="c1"># force WebHDFS REST (port 9870)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>hfs<span class="w"> </span>--backend<span class="w"> </span>rpc<span class="w">      </span><span class="c1"># force native RPC (port 8020)</span>
+</code></pre></div>
+<h3 id="auto-detection-logic">Auto-detection logic<a class="headerlink" href="#auto-detection-logic" title="Permanent link">&para;</a></h3>
+<p>With <code>--backend auto</code> (default):</p>
+<ol>
+<li>If <code>HFS_NAMENODE</code> starts with <code>hdfs://</code> (e.g. <code>hdfs://namenode:8020</code>):</li>
+<li>Builds the RPC client (no TCP connection yet)</li>
+<li>Probes <code>stat /</code> with a 3-second timeout</li>
+<li>If it responds → uses <strong>RPC</strong> (port 8020, native protocol)</li>
+<li>If timeout or connection refused → uses <strong>WebHDFS</strong> (port 9870)</li>
+<li>Otherwise → uses <strong>WebHDFS</strong> directly</li>
+</ol>
+<h3 id="backend-comparison">Backend comparison<a class="headerlink" href="#backend-comparison" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th><code>rpc</code></th>
+<th><code>webhdfs</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Protocol</td>
+<td>Protobuf/TCP port 8020</td>
+<td>HTTP/REST port 9870</td>
+</tr>
+<tr>
+<td><code>ls</code>, <code>stat</code></td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>du</code></td>
+<td>❌ (not in hdfs-native v0.9)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>health</code></td>
+<td>❌ (requires JMX)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>schema</code>, <code>rowcount</code></td>
+<td>✅ via <code>read_range</code></td>
+<td>✅ via HTTP range request</td>
+</tr>
+<tr>
+<td>Kerberos RPC</td>
+<td>✅ with <code>--features kerberos</code></td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Kerberos WebHDFS (SPNEGO)</td>
+<td>❌</td>
+<td>✅ via <code>kinit</code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">hdfs-native v0.9 limitation</p>
+<p>The RPC backend does not expose <code>replication</code> and <code>block_size</code> in <code>ls</code>/<code>stat</code>.
+These fields show <code>-</code> or are omitted. A fix will be contributed upstream.</p>
+</div>
+<hr />
+<h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HFS_NAMENODE</code></td>
+<td>NameNode URI. <code>http://</code> → WebHDFS, <code>hdfs://</code> → RPC</td>
+<td><code>hdfs://namenode:8020</code></td>
+</tr>
+<tr>
+<td><code>HFS_BACKEND</code></td>
+<td>Backend: <code>rpc</code>, <code>webhdfs</code>, <code>auto</code></td>
+<td><code>webhdfs</code></td>
+</tr>
+<tr>
+<td><code>HFS_USER</code></td>
+<td>HDFS user (overrides <code>HADOOP_USER_NAME</code>)</td>
+<td><code>hadoop</code></td>
+</tr>
+<tr>
+<td><code>HADOOP_CONF_DIR</code></td>
+<td>Hadoop configuration directory</td>
+<td><code>/etc/hadoop/conf</code></td>
+</tr>
+<tr>
+<td><code>HADOOP_USER_NAME</code></td>
+<td>HDFS user (Hadoop compatibility)</td>
+<td><code>hadoop</code></td>
+</tr>
+<tr>
+<td><code>RUST_LOG</code></td>
+<td>Log level</td>
+<td><code>debug</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="core-sitexml">core-site.xml<a class="headerlink" href="#core-sitexml" title="Permanent link">&para;</a></h2>
+<p>If <code>HADOOP_CONF_DIR</code> is set or <code>/etc/hadoop/conf/core-site.xml</code> exists,
+hfs automatically reads these properties:</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fs.defaultFS</code></td>
+<td>Primary NameNode URI (e.g. <code>hdfs://namenode:8020</code>)</td>
+</tr>
+<tr>
+<td><code>fs.default.name</code></td>
+<td>Legacy alias for <code>fs.defaultFS</code></td>
+</tr>
+<tr>
+<td><code>dfs.namenode.http-address</code></td>
+<td>Explicit WebHDFS URL (e.g. <code>namenode:9870</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Minimal <code>core-site.xml</code> example:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">&lt;configuration&gt;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&lt;property&gt;</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&lt;name&gt;</span>fs.defaultFS<span class="nt">&lt;/name&gt;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">&lt;value&gt;</span>hdfs://namenode.prod.internal:8020<span class="nt">&lt;/value&gt;</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="nt">&lt;/property&gt;</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">&lt;property&gt;</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">&lt;name&gt;</span>dfs.namenode.http-address<span class="nt">&lt;/name&gt;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">&lt;value&gt;</span>namenode.prod.internal:9870<span class="nt">&lt;/value&gt;</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="nt">&lt;/property&gt;</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="nt">&lt;/configuration&gt;</span>
+</code></pre></div></p>
+<hr />
+<h2 id="diagnostics">Diagnostics<a class="headerlink" href="#diagnostics" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Check which backend was selected</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>hfs<span class="w"> </span>--show-backend<span class="w"> </span>ls<span class="w"> </span>/
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Force a backend and inspect the response</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>hfs<span class="w"> </span>--backend<span class="w"> </span>webhdfs<span class="w"> </span>--show-backend<span class="w"> </span>capabilities
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>hfs<span class="w"> </span>--backend<span class="w"> </span>rpc<span class="w"> </span>--show-backend<span class="w"> </span>capabilities
+</code></pre></div>
+<p>Expected output on a cluster with WebHDFS:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>[backend: WebHDFS]
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>hfs v0.1.0-dev
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>Backend: WebHDFS
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>Kerberos: disabled (build with --features kerberos for RPC Kerberos)
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>WebHDFS URL: http://namenode:9870
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>NameNode URI: hdfs://namenode:8020
+</code></pre></div></p>
 
 
 
