@@ -82,13 +82,29 @@ jobs:
       - name: Start HDFS test cluster
         run: |
           docker compose -f docker/docker-compose.test.yml up -d
-          # Wait for NameNode to be healthy
+          # Wait for NameNode to be healthy (up to 120s)
           timeout 120 bash -c 'until docker compose -f docker/docker-compose.test.yml ps | grep namenode | grep healthy; do sleep 5; done'
           echo "NameNode is healthy"
+          # Wait for DataNodes to register (namenode healthy ≠ datanodes connected)
+          timeout 60 bash -c '
+            until curl -sf "http://localhost:9870/jmx?qry=Hadoop:service=NameNode,name=FSNamesystemState" \
+              | grep -q "\"NumLiveDataNodes\" : [1-9]"; do sleep 3; done'
+          echo "At least 1 DataNode is live"
 
       - name: Load test fixtures
         run: |
-          docker exec hfs-test-client /load-fixtures.sh || true
+          # The namenode container has hadoop config + fixtures mounted.
+          # Run fixture loading there to avoid any client config issues.
+          docker exec hfs-test-namenode bash -c "
+            hdfs dfs -mkdir -p /test-data/parquet/ /test-data/avro/ /test-data/mixed/ \
+              /test-data/schema-drift/v1/ /test-data/schema-drift/v2/ /test-data/small-files/
+            hdfs dfs -put -f /fixtures/small.parquet /test-data/parquet/small.parquet
+            for i in \$(seq 1 20); do
+              echo 'small file content for testing' | \
+                hdfs dfs -put - /test-data/small-files/file_\$(printf '%03d' \$i).txt
+            done
+            echo '==> Fixture listing:' && hdfs dfs -ls -R /test-data/
+          "
 
       - name: Run integration tests
         env:

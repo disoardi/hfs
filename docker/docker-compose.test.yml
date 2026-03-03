@@ -108,7 +108,7 @@ services:
       namenode:
         condition: service_healthy
 
-  # Client container: usato per caricare fixture e per test manuali
+  # Client container: used to load fixtures and for manual testing
   hdfs-client:
     image: apache/hadoop:3.3.6
     hostname: hdfs-client
@@ -118,6 +118,7 @@ services:
     volumes:
       - ./init/fixtures/:/fixtures/:ro
       - ./init/load-fixtures.sh:/load-fixtures.sh:ro
+      - ./init/hadoop-config/:/opt/hadoop/etc/hadoop/custom/:ro   # required for hdfs dfs commands
     command: >
       bash -c "
         cp /opt/hadoop/etc/hadoop/custom/*.xml /opt/hadoop/etc/hadoop/ 2>/dev/null || true
