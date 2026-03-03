@@ -525,6 +525,107 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#general-syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      General syntax
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="General syntax">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#global-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Global options
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filesystem-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filesystem commands
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Filesystem commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ls-list-files-and-directories" class="md-nav__link">
+    <span class="md-ellipsis">
+      ls — List files and directories
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stat-file-or-directory-statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      stat — File or directory statistics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#du-disk-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      du — Disk usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#health-cluster-health-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      health — Cluster health dashboard
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Schema commands
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-cluster-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced cluster commands
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -542,7 +643,172 @@
 
 
 <h1 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h1>
-<p>See the <a href="../comandi/">Italian documentation</a> for now — English translation in progress.</p>
+<h2 id="general-syntax">General syntax<a class="headerlink" href="#general-syntax" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>hfs<span class="w"> </span><span class="o">[</span>GLOBAL<span class="w"> </span>OPTIONS<span class="o">]</span><span class="w"> </span>&lt;COMMAND&gt;<span class="w"> </span><span class="o">[</span>ARGUMENTS<span class="o">]</span>
+</code></pre></div>
+<h3 id="global-options">Global options<a class="headerlink" href="#global-options" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--namenode &lt;URI&gt;</code></td>
+<td>from <code>core-site.xml</code> or <code>HFS_NAMENODE</code></td>
+<td>NameNode URI: <code>hdfs://host:8020</code> or <code>http://host:9870</code></td>
+</tr>
+<tr>
+<td><code>--backend &lt;rpc\|webhdfs\|auto&gt;</code></td>
+<td><code>auto</code></td>
+<td>Force connection backend</td>
+</tr>
+<tr>
+<td><code>--output &lt;text\|json&gt;</code></td>
+<td><code>text</code></td>
+<td>Output format</td>
+</tr>
+<tr>
+<td><code>--show-backend</code></td>
+<td>—</td>
+<td>Print selected backend to stderr</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="filesystem-commands">Filesystem commands<a class="headerlink" href="#filesystem-commands" title="Permanent link">&para;</a></h2>
+<h3 id="ls-list-files-and-directories"><code>ls</code> — List files and directories<a class="headerlink" href="#ls-list-files-and-directories" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>hfs<span class="w"> </span>ls<span class="w"> </span>&lt;path&gt;
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>hfs<span class="w"> </span>ls<span class="w"> </span>--output<span class="w"> </span>json<span class="w"> </span>&lt;path&gt;
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>hfs<span class="w"> </span>ls<span class="w"> </span>--human-readable<span class="w"> </span>&lt;path&gt;
+</code></pre></div>
+<p><strong>Example:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>hfs ls /data/warehouse/
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>┌──────┬──────┬────────┬────────────┬──────┬────────────┬────────────────────────────────┐
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>│ Perm │ Repl │ Owner  │ Group      │ Size │ Modified   │ Path                           │
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>╞══════╪══════╪════════╪════════════╪══════╪════════════╪════════════════════════════════╡
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>│ d755 │ -    │ hdfs   │ supergroup │ 0    │ 1706745600 │ /data/warehouse/transactions   │
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>│ -644 │ 3    │ hdfs   │ supergroup │ 128M │ 1706832000 │ /data/warehouse/sales.parquet  │
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>└──────┴──────┴────────┴────────────┴──────┴────────────┴────────────────────────────────┘
+</code></pre></div></p>
+<p><strong>Comparison with Java HDFS client:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th><code>hdfs dfs -ls</code></th>
+<th><code>hfs ls</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Directory with 2M files</td>
+<td>OOM — full list in RAM</td>
+<td>Stream row by row</td>
+</tr>
+<tr>
+<td>Startup for single command</td>
+<td>4–8 seconds</td>
+<td>~50ms</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="stat-file-or-directory-statistics"><code>stat</code> — File or directory statistics<a class="headerlink" href="#stat-file-or-directory-statistics" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>hfs<span class="w"> </span>stat<span class="w"> </span>&lt;path&gt;
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>hfs<span class="w"> </span>stat<span class="w"> </span>--output<span class="w"> </span>json<span class="w"> </span>&lt;path&gt;
+</code></pre></div>
+<p><strong>Example:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>hfs stat /data/warehouse/sales.parquet
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Path:          /data/warehouse/sales.parquet
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>Type:          file
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>Size:          128.0 MB (134217728 bytes)
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>Replication:   3
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>Block size:    128.0 MB
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>Owner:         hdfs
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>Group:         supergroup
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>Permission:    644
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>Modified:      1706832000
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>Accessed:      1706832001
+</code></pre></div></p>
+<hr />
+<h3 id="du-disk-usage"><code>du</code> — Disk usage<a class="headerlink" href="#du-disk-usage" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>hfs<span class="w"> </span>du<span class="w"> </span>&lt;path&gt;
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>hfs<span class="w"> </span>du<span class="w"> </span>--human-readable<span class="w"> </span>&lt;path&gt;
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>hfs<span class="w"> </span>du<span class="w"> </span>--output<span class="w"> </span>json<span class="w"> </span>&lt;path&gt;
+</code></pre></div>
+<p><strong>Example:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>hfs du --human-readable /data/warehouse/
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>Path:          /data/warehouse/
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>Files:         1247
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>Directories:   83
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>Size (raw):    45.2 GB
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>Space used:    135.6 GB
+</code></pre></div></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>"Space used" includes replicas (e.g. 3 replicas × size = 3× the raw size).</p>
+</div>
+<hr />
+<h3 id="health-cluster-health-dashboard"><code>health</code> — Cluster health dashboard<a class="headerlink" href="#health-cluster-health-dashboard" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>hfs<span class="w"> </span>health
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>hfs<span class="w"> </span>health<span class="w"> </span>--output<span class="w"> </span>json
+</code></pre></div>
+<p><strong>Example:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>hfs health
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>Cluster status:        OK
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>Live datanodes:        2
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>Dead datanodes:        0
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>Stale datanodes:       0
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>Under-replicated:      0
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>Corrupt blocks:        0
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>Capacity (total):      1.1 TB
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>Capacity (used):       352.0 KB
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>Capacity (free):       909.9 GB
+</code></pre></div></p>
+<p>The <code>health</code> command reads cluster metrics from the NameNode JMX endpoint — no data scan required.</p>
+<p><strong>Status levels:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OK</code></td>
+<td>No dead nodes, no corrupt blocks, no under-replicated blocks</td>
+</tr>
+<tr>
+<td><code>WARNING</code></td>
+<td>Under-replicated blocks or stale nodes present</td>
+</tr>
+<tr>
+<td><code>DEGRADED</code></td>
+<td>Dead nodes or corrupt blocks detected</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="schema-commands">Schema commands<a class="headerlink" href="#schema-commands" title="Permanent link">&para;</a></h2>
+<div class="admonition tip">
+<p class="admonition-title">Sprint Day 3</p>
+<p>The <code>schema</code>, <code>stats</code>, and <code>rowcount</code> commands will be implemented on Day 3.</p>
+</div>
+<hr />
+<h2 id="advanced-cluster-commands">Advanced cluster commands<a class="headerlink" href="#advanced-cluster-commands" title="Permanent link">&para;</a></h2>
+<div class="admonition tip">
+<p class="admonition-title">Sprint Day 4-5</p>
+<p>The <code>blocks</code>, <code>replicas</code>, <code>small-files</code>, and <code>drift</code> commands will be implemented on Days 4-5.</p>
+</div>
 
 
 
