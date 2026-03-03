@@ -23,10 +23,12 @@ ipa service-add "hfs/hdfs-client.hfs.test@${REALM}" --force || true
 ipa user-add hfs-test --first="HFS" --last="TestUser" --password-expiration=20991231000000Z || true
 echo -e "TestPass1234\nTestPass1234" | ipa passwd hfs-test || true
 
-# Export keytabs
+# Export keytabs — one file per service principal for clarity.
+# namenode and datanode use separate principals so they need separate keytabs.
 mkdir -p ${KEYTAB_DIR}
-ipa-getkeytab -s ipa.hfs.test -p "hdfs/namenode-kerb.hfs.test@${REALM}" -k ${KEYTAB_DIR}/hdfs.keytab
-ipa-getkeytab -s ipa.hfs.test -p "hfs/hdfs-client.hfs.test@${REALM}" -k ${KEYTAB_DIR}/hfs.keytab
+ipa-getkeytab -s ipa.hfs.test -p "hdfs/namenode-kerb.hfs.test@${REALM}" -k ${KEYTAB_DIR}/namenode.keytab
+ipa-getkeytab -s ipa.hfs.test -p "hdfs/datanode-kerb.hfs.test@${REALM}" -k ${KEYTAB_DIR}/datanode.keytab
+ipa-getkeytab -s ipa.hfs.test -p "hfs/hdfs-client.hfs.test@${REALM}"    -k ${KEYTAB_DIR}/hfs.keytab
 
 echo "==> Principals and keytabs created in ${KEYTAB_DIR}/"
 ls -la ${KEYTAB_DIR}/

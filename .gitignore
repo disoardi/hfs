@@ -4,3 +4,6 @@ Cargo.lock
 /.venv/
 # MAI committare con patch attiva su main
 # Verifica: grep -r "patch.crates-io" Cargo.toml
+
+# Kerberos keytabs — generated at runtime by setup-principals.sh, never commit
+docker/init/kerb/keytabs/*.keytab

@@ -38,7 +38,7 @@ parquet = { version = "50", default-features = false, features = ["arrow"] }
 apache-avro = "0.16"
 
 # Output CLI
-comfy-table = "7"
+comfy-table = ">=7.0, <7.2"  # 7.2+ requires Rust >= 1.88 (let_chains); pin below until MSRV is raised
 indicatif = "0.17"
 
 [profile.release]

@@ -27,7 +27,7 @@
   </property>
   <property>
     <name>dfs.namenode.keytab.file</name>
-    <value>/keytabs/hdfs.keytab</value>
+    <value>/keytabs/namenode.keytab</value>
   </property>
   <property>
     <name>dfs.datanode.kerberos.principal</name>
@@ -35,6 +35,19 @@
   </property>
   <property>
     <name>dfs.datanode.keytab.file</name>
-    <value>/keytabs/hdfs.keytab</value>
+    <value>/keytabs/datanode.keytab</value>
+  </property>
+  <!-- HTTP principals for WebHDFS SPNEGO -->
+  <property>
+    <name>dfs.namenode.kerberos.internal.spnego.principal</name>
+    <value>hdfs/namenode-kerb.hfs.test@HFS.TEST</value>
+  </property>
+  <property>
+    <name>dfs.web.authentication.kerberos.principal</name>
+    <value>hdfs/namenode-kerb.hfs.test@HFS.TEST</value>
+  </property>
+  <property>
+    <name>dfs.web.authentication.kerberos.keytab</name>
+    <value>/keytabs/namenode.keytab</value>
   </property>
 </configuration>

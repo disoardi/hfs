@@ -1,4 +1,4 @@
 [toolchain]
-# Requires Rust stable >= 1.88 (let_chains stabilised, comfy-table 7.x).
+# MSRV: Rust stable >= 1.86. comfy-table pinned < 7.2 to avoid let_chains (Rust 1.88+).
 # Install the toolchain manager: https://rustup.rs
 channel = "stable"

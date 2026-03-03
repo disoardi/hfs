@@ -1,13 +1,26 @@
 # Test cluster con Kerberos: HDFS + FreeIPA KDC
-# FreeIPA agisce da KDC e DNS.
-# Al primo avvio FreeIPA impiega 3-5 minuti.
+# FreeIPA agisce da KDC e DNS per il dominio hfs.test.
 #
-# Usage:
-#   docker compose -f docker/docker-compose.kerb.yml up -d
-#   docker compose -f docker/docker-compose.kerb.yml exec freeipa /scripts/wait-for-ipa.sh
-#   docker compose -f docker/docker-compose.kerb.yml exec hdfs-client kinit -kt /keytabs/hfs.keytab hfs/hdfs-client
-#   HFS_NAMENODE=hdfs://namenode-kerb:8020 HFS_KERBEROS=true cargo test --features kerberos -- --include-ignored
+# STARTUP SEQUENCE (importante — rispettare l'ordine):
+#
+#   1. docker compose -f docker/docker-compose.kerb.yml up -d freeipa
+#   2. docker compose -f docker/docker-compose.kerb.yml exec freeipa /scripts/wait-for-ipa.sh
+#      (FreeIPA impiega 3-5 min al primo avvio)
+#   3. docker exec hfs-kerb-ipa /scripts/setup-principals.sh
+#      (crea principal e scrive keytab in docker/init/kerb/keytabs/)
+#   4. docker compose -f docker/docker-compose.kerb.yml up -d
+#      (avvia namenode, datanode, client — i keytab esistono già)
+#
+# TEST:
+#   docker compose -f docker/docker-compose.kerb.yml exec hdfs-client \
+#     kinit -kt /keytabs/hfs.keytab hfs/hdfs-client.hfs.test@HFS.TEST
+#   HFS_NAMENODE=hdfs://namenode-kerb:8020 HFS_KERBEROS=true \
+#     cargo test --features kerberos --workspace -- --include-ignored
+#
+# TEARDOWN:
 #   docker compose -f docker/docker-compose.kerb.yml down -v
+#   rm -f docker/init/kerb/keytabs/*.keytab   # keytab generati a runtime
+
 version: "3.8"
 
 networks:
@@ -23,6 +36,7 @@ volumes:
   datanode-kerb-data:
 
 services:
+  # ── FreeIPA KDC ──────────────────────────────────────────────────────────────
   freeipa:
     image: freeipa/freeipa-server:fedora-39
     hostname: ipa.hfs.test
@@ -35,6 +49,8 @@ services:
     volumes:
       - freeipa-data:/data
       - ./init/kerb/:/scripts/:ro
+      # Keytabs directory: setup-principals.sh scrive qui; altri container lo leggono
+      - ./init/kerb/keytabs/:/keytabs/
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
     environment:
       IPA_SERVER_INSTALL_OPTS: >-
@@ -53,6 +69,7 @@ services:
       retries: 15
       start_period: 180s  # FreeIPA è lento al primo avvio
 
+  # ── HDFS NameNode (Kerberos) ─────────────────────────────────────────────────
   namenode-kerb:
     image: apache/hadoop:3.3.6
     hostname: namenode-kerb.hfs.test
@@ -61,22 +78,35 @@ services:
       kerb-net:
         ipv4_address: 172.28.0.20
     ports:
-      - "9871:9870"   # WebHDFS
-      - "8021:8020"   # RPC
+      - "9871:9870"   # WebHDFS (SPNEGO-protected)
+      - "8021:8020"   # RPC (SASL/GSSAPI-protected)
     volumes:
       - namenode-kerb-data:/tmp/hadoop-root/dfs/name
       - ./init/kerb-hadoop-config/:/opt/hadoop/etc/hadoop/custom/:ro
       - ./init/kerb/keytabs/:/keytabs/:ro
+      - ./init/kerb/krb5.conf:/etc/krb5.conf:ro
+    environment:
+      KRB5_CONFIG: /etc/krb5.conf
     command: >
       bash -c "
-        cp /opt/hadoop/etc/hadoop/custom/*.xml /opt/hadoop/etc/hadoop/ 2>/dev/null || true
+        cp /opt/hadoop/etc/hadoop/custom/*.xml /opt/hadoop/etc/hadoop/ 2>/dev/null || true &&
+        echo 'Waiting for namenode.keytab...' &&
+        until [ -f /keytabs/namenode.keytab ]; do sleep 3; done &&
+        echo 'Keytab found, starting namenode.' &&
         hdfs namenode -format -force -nonInteractive &&
         hdfs namenode
       "
     depends_on:
       freeipa:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9870/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
+  # ── HDFS DataNode (Kerberos) ─────────────────────────────────────────────────
   datanode-kerb:
     image: apache/hadoop:3.3.6
     hostname: datanode-kerb.hfs.test
@@ -88,15 +118,20 @@ services:
       - datanode-kerb-data:/tmp/hadoop-root/dfs/data
       - ./init/kerb-hadoop-config/:/opt/hadoop/etc/hadoop/custom/:ro
       - ./init/kerb/keytabs/:/keytabs/:ro
+      - ./init/kerb/krb5.conf:/etc/krb5.conf:ro
+    environment:
+      KRB5_CONFIG: /etc/krb5.conf
     command: >
       bash -c "
-        cp /opt/hadoop/etc/hadoop/custom/*.xml /opt/hadoop/etc/hadoop/ 2>/dev/null || true
+        cp /opt/hadoop/etc/hadoop/custom/*.xml /opt/hadoop/etc/hadoop/ 2>/dev/null || true &&
+        until [ -f /keytabs/datanode.keytab ]; do sleep 3; done &&
         hdfs datanode
       "
     depends_on:
       namenode-kerb:
         condition: service_healthy
 
+  # ── HDFS Client (test + fixture loading) ────────────────────────────────────
   hdfs-client:
     image: apache/hadoop:3.3.6
     hostname: hdfs-client.hfs.test
@@ -106,11 +141,18 @@ services:
         ipv4_address: 172.28.0.30
     volumes:
       - ./init/fixtures/:/fixtures/:ro
+      - ./init/load-fixtures.sh:/load-fixtures.sh:ro
+      - ./init/kerb-hadoop-config/:/opt/hadoop/etc/hadoop/custom/:ro
       - ./init/kerb/keytabs/:/keytabs/:ro
       - ./init/kerb/krb5.conf:/etc/krb5.conf:ro
-      - ./init/load-fixtures.sh:/load-fixtures.sh:ro
     environment:
       KRB5_CONFIG: /etc/krb5.conf
-    command: sleep infinity
+    command: >
+      bash -c "
+        cp /opt/hadoop/etc/hadoop/custom/*.xml /opt/hadoop/etc/hadoop/ 2>/dev/null || true &&
+        echo 'Client ready.' &&
+        echo 'To authenticate: kinit -kt /keytabs/hfs.keytab hfs/hdfs-client.hfs.test@HFS.TEST' &&
+        sleep infinity
+      "
     depends_on:
       - namenode-kerb
