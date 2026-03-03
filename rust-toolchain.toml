@@ -1,0 +1,4 @@
+[toolchain]
+# Requires Rust stable >= 1.88 (let_chains stabilised, comfy-table 7.x).
+# Install the toolchain manager: https://rustup.rs
+channel = "stable"

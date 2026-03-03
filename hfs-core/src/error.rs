@@ -20,6 +20,9 @@ pub enum HfsError {
     #[error("Config error: {0}")]
     Config(String),
 
+    #[error("NameNode unavailable: {0}")]
+    NameNodeUnavailable(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 

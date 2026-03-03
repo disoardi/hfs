@@ -10,17 +10,17 @@
 //   - LocalFileReader (per test su file locali)
 //   - futuro: S3RangeReader, GcsRangeReader via object_store
 
-pub mod parquet;
 pub mod avro;
-pub mod schema;
 pub mod hive;
+pub mod parquet;
+pub mod schema;
 
 #[cfg(feature = "orc")]
 pub mod orc;
 
-pub use schema::{Schema, Field, FieldType, SchemaDiff, DiffResult};
-pub use parquet::ParquetInspector;
 pub use avro::AvroInspector;
+pub use parquet::ParquetInspector;
+pub use schema::{DiffResult, Field, FieldType, Schema, SchemaDiff};
 
 #[cfg(feature = "hive")]
 pub use hive::HiveMetastoreClient;

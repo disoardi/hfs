@@ -22,25 +22,51 @@ pub struct Field {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum FieldType {
     Boolean,
-    Int8, Int16, Int32, Int64,
-    Float32, Float64,
-    Decimal { precision: u8, scale: i8 },
-    Utf8, LargeUtf8,
-    Binary, LargeBinary,
-    Date32, Date64,
-    Timestamp { timezone: Option<String> },
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Float32,
+    Float64,
+    Decimal {
+        precision: u8,
+        scale: i8,
+    },
+    Utf8,
+    LargeUtf8,
+    Binary,
+    LargeBinary,
+    Date32,
+    Date64,
+    Timestamp {
+        timezone: Option<String>,
+    },
     List(Box<FieldType>),
-    Map { key: Box<FieldType>, value: Box<FieldType> },
+    Map {
+        key: Box<FieldType>,
+        value: Box<FieldType>,
+    },
     Struct(Vec<Field>),
-    Unknown(String),  // tipo non mappato — preserva il nome originale
+    Unknown(String), // tipo non mappato — preserva il nome originale
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum SchemaSource {
-    Parquet { path: String, row_groups: usize, row_count: u64 },
-    Avro    { path: String },
-    Orc     { path: String },
-    Hive    { database: String, table: String },
+    Parquet {
+        path: String,
+        row_groups: usize,
+        row_count: u64,
+    },
+    Avro {
+        path: String,
+    },
+    Orc {
+        path: String,
+    },
+    Hive {
+        database: String,
+        table: String,
+    },
 }
 
 /// Risultato del confronto tra due schemi
@@ -49,15 +75,28 @@ pub struct SchemaDiff {
     pub source_a: SchemaSource,
     pub source_b: SchemaSource,
     pub changes: Vec<DiffResult>,
-    pub compatible: bool,  // false = schema change breaking
+    pub compatible: bool, // false = schema change breaking
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DiffResult {
-    Added   { field: Field },           // campo in B non presente in A
-    Removed { field: Field },           // campo in A non presente in B (breaking)
-    Changed { name: String, from: FieldType, to: FieldType, breaking: bool },
-    Reordered { name: String, from_pos: usize, to_pos: usize },
+    Added {
+        field: Field,
+    }, // campo in B non presente in A
+    Removed {
+        field: Field,
+    }, // campo in A non presente in B (breaking)
+    Changed {
+        name: String,
+        from: FieldType,
+        to: FieldType,
+        breaking: bool,
+    },
+    Reordered {
+        name: String,
+        from_pos: usize,
+        to_pos: usize,
+    },
 }
 
 impl SchemaDiff {
@@ -88,10 +127,12 @@ impl SchemaDiff {
             }
         }
 
-        let compatible = !changes.iter().any(|c| matches!(
-            c,
-            DiffResult::Removed { .. } | DiffResult::Changed { breaking: true, .. }
-        ));
+        let compatible = !changes.iter().any(|c| {
+            matches!(
+                c,
+                DiffResult::Removed { .. } | DiffResult::Changed { breaking: true, .. }
+            )
+        });
 
         Self {
             source_a: a.source.clone(),
@@ -106,9 +147,9 @@ impl SchemaDiff {
         matches!(
             (from, to),
             (FieldType::Int32, FieldType::Int64)
-            | (FieldType::Float32, FieldType::Float64)
-            | (FieldType::Utf8, FieldType::LargeUtf8)
-            | (FieldType::Binary, FieldType::LargeBinary)
+                | (FieldType::Float32, FieldType::Float64)
+                | (FieldType::Utf8, FieldType::LargeUtf8)
+                | (FieldType::Binary, FieldType::LargeBinary)
         )
     }
 }

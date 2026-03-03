@@ -10,6 +10,7 @@ pub mod config;
 pub mod error;
 pub mod webhdfs;
 
-pub use client::{HdfsClient, FileStatus, ContentSummary, BlockInfo};
+pub use client::{BlockInfo, ClusterHealth, ContentSummary, FileStatus, HdfsClient};
 pub use config::HdfsConfig;
 pub use error::HfsError;
+pub use webhdfs::WebHdfsClient;

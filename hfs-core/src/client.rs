@@ -36,7 +36,7 @@ pub struct ContentSummary {
     pub file_count: u64,
     pub length: u64,
     pub space_consumed: u64,
-    pub quota: i64,           // -1 = nessuna quota
+    pub quota: i64, // -1 = nessuna quota
     pub space_quota: i64,
 }
 
@@ -46,7 +46,7 @@ pub struct BlockInfo {
     pub block_id: u64,
     pub length: u64,
     pub corrupt: bool,
-    pub datanode_locations: Vec<String>,  // host:port di ogni replica
+    pub datanode_locations: Vec<String>, // host:port di ogni replica
 }
 
 /// Stato di salute del cluster
@@ -60,7 +60,7 @@ pub struct ClusterHealth {
     pub capacity_total_bytes: u64,
     pub capacity_used_bytes: u64,
     pub capacity_remaining_bytes: u64,
-    pub namenode_ha_state: Option<String>,  // "active" | "standby" | None se non HA
+    pub namenode_ha_state: Option<String>, // "active" | "standby" | None se non HA
 }
 
 /// Trait principale — implementato da RpcClient e WebHdfsClient

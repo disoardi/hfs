@@ -3,7 +3,10 @@
 // Formato Avro: [4-byte magic][schema JSON in header][sync marker][data blocks...]
 // Lo schema è nell'header, quindi si leggono solo i primi ~4KB.
 
-use crate::{SeekableReader, schema::{Schema, SchemaSource}};
+use crate::{
+    schema::{Schema, SchemaSource},
+    SeekableReader,
+};
 use anyhow::Result;
 
 pub struct AvroInspector;
@@ -16,7 +19,7 @@ impl AvroInspector {
         // Verifica magic Avro: b"Obj\x01"
         if header_bytes.len() < 4 || &header_bytes[0..4] != b"Obj\x01" {
             // Prova anche il formato Avro single-object encoding
-            if header_bytes.len() >= 10 && &header_bytes[0..2] == &[0xC3, 0x01] {
+            if header_bytes.len() >= 10 && header_bytes[0..2] == [0xC3, 0x01] {
                 return Self::parse_single_object_schema(&header_bytes, path);
             }
             return Err(anyhow::anyhow!("Not an Avro file (magic bytes mismatch)"));
@@ -33,7 +36,9 @@ impl AvroInspector {
         // Avro Single Object Encoding — schema embedded come fingerprint
         Ok(Schema {
             fields: vec![],
-            source: SchemaSource::Avro { path: path.to_string() },
+            source: SchemaSource::Avro {
+                path: path.to_string(),
+            },
         })
     }
 }

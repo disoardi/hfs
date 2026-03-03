@@ -14,6 +14,7 @@ thiserror   = { workspace = true }
 serde       = { workspace = true }
 serde_json  = { workspace = true }
 tokio       = { workspace = true }
+async-trait = { workspace = true }
 
 # ORC — dipendenza opzionale, meno matura
 orc-rust = { version = "0.3", optional = true }
@@ -22,6 +23,8 @@ orc-rust = { version = "0.3", optional = true }
 thrift = { version = "0.17", optional = true }
 
 [features]
-default = ["orc", "hive"]
+# ORC disabled by default: orc-rust v0.3 pulls arrow v52 which conflicts with parquet v50 (arrow v50)
+# Re-enable after upgrading parquet to v52+
+default = ["hive"]
 orc     = ["dep:orc-rust"]
 hive    = ["dep:thrift"]

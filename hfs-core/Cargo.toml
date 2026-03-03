@@ -14,14 +14,17 @@ anyhow       = { workspace = true }
 thiserror    = { workspace = true }
 serde        = { workspace = true }
 serde_json   = { workspace = true }
+async-trait  = { workspace = true }
 
 [features]
-default     = ["kerberos"]
-kerberos    = ["dep:libgssapi-sys"]
+default  = []
+kerberos = ["dep:libgssapi-sys"]
 
 [dependencies.libgssapi-sys]
-version  = "0.7"
+version  = "0.3"
 optional = true
 
 [dev-dependencies]
 tokio-test = "0.4"
+mockito    = "1"
+tempfile   = "3"
