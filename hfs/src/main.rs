@@ -4,7 +4,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use comfy_table::{presets::UTF8_FULL_CONDENSED, Table};
-use hfs_core::{HdfsClient, HdfsConfig, WebHdfsClient};
+use hfs_core::{HdfsClient, HdfsClientBuilder, HdfsConfig};
 
 #[derive(Parser)]
 #[command(
@@ -129,7 +129,7 @@ enum Commands {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // Build config from env/file, then apply CLI override
+    // Build config from env/file, then apply CLI overrides.
     let mut config = HdfsConfig::load()?;
     if let Some(ref nn) = cli.namenode {
         if nn.starts_with("http://") || nn.starts_with("https://") {
@@ -142,9 +142,8 @@ async fn main() -> Result<()> {
         config.preferred_backend = cli.backend.clone();
     }
 
-    // For now, always use WebHDFS. Builder with auto-detection comes in Day 2.
-    let webhdfs_url = config.effective_webhdfs_url();
-    let client = WebHdfsClient::new(&webhdfs_url);
+    // Auto-select backend: tries RPC first, falls back to WebHDFS.
+    let client = HdfsClientBuilder::build(&config).await;
 
     if cli.show_backend {
         eprintln!("[backend: {}]", client.backend_name());
@@ -157,27 +156,27 @@ async fn main() -> Result<()> {
             recursive: _,
             human_readable,
         } => {
-            cmd_ls(&client, path, *human_readable, &cli.output).await?;
+            cmd_ls(client.as_ref(), path, *human_readable, &cli.output).await?;
         }
         Commands::Stat { path } => {
-            cmd_stat(&client, path, &cli.output).await?;
+            cmd_stat(client.as_ref(), path, &cli.output).await?;
         }
         Commands::Du {
             path,
             summary: _,
             human_readable,
         } => {
-            cmd_du(&client, path, *human_readable, &cli.output).await?;
+            cmd_du(client.as_ref(), path, *human_readable, &cli.output).await?;
         }
         Commands::Health => {
-            cmd_health(&client, &cli.output).await?;
+            cmd_health(client.as_ref(), &cli.output).await?;
         }
         Commands::Capabilities => {
             println!("hfs v0.1.0-dev");
             println!("Backend: {}", client.backend_name());
-            // Kerberos feature is in hfs-core, not the binary crate
             println!("Kerberos: disabled (build with --features kerberos for RPC Kerberos)");
-            println!("WebHDFS URL: {}", webhdfs_url);
+            println!("WebHDFS URL: {}", config.effective_webhdfs_url());
+            println!("NameNode URI: {}", config.namenode_uri);
         }
         _ => {
             eprintln!("Command not yet implemented. Sprint plan: see CLAUDE.md");
@@ -191,7 +190,7 @@ async fn main() -> Result<()> {
 // ─── Command implementations ──────────────────────────────────────────────────
 
 async fn cmd_ls(
-    client: &WebHdfsClient,
+    client: &dyn HdfsClient,
     path: &str,
     human_readable: bool,
     output_format: &str,
@@ -216,8 +215,10 @@ async fn cmd_ls(
         let perm = format!("{}{}", if e.is_dir { 'd' } else { '-' }, &e.permission);
         let repl = if e.is_dir {
             "-".to_string()
-        } else {
+        } else if e.replication > 0 {
             e.replication.to_string()
+        } else {
+            "-".to_string() // RPC backend: replication not exposed by hdfs-native v0.9
         };
         let mtime = format_mtime(e.modification_time);
         table.add_row([&perm, &repl, &e.owner, &e.group, &size, &mtime, &e.path]);
@@ -227,7 +228,7 @@ async fn cmd_ls(
     Ok(())
 }
 
-async fn cmd_stat(client: &WebHdfsClient, path: &str, output_format: &str) -> Result<()> {
+async fn cmd_stat(client: &dyn HdfsClient, path: &str, output_format: &str) -> Result<()> {
     let s = client.stat(path).await?;
 
     if output_format == "json" {
@@ -245,8 +246,12 @@ async fn cmd_stat(client: &WebHdfsClient, path: &str, output_format: &str) -> Re
         format_size(s.length),
         s.length
     );
-    println!("Replication:   {}", s.replication);
-    println!("Block size:    {}", format_size(s.block_size));
+    if s.replication > 0 {
+        println!("Replication:   {}", s.replication);
+    }
+    if s.block_size > 0 {
+        println!("Block size:    {}", format_size(s.block_size));
+    }
     println!("Owner:         {}", s.owner);
     println!("Group:         {}", s.group);
     println!("Permission:    {}", s.permission);
@@ -257,7 +262,7 @@ async fn cmd_stat(client: &WebHdfsClient, path: &str, output_format: &str) -> Re
 }
 
 async fn cmd_du(
-    client: &WebHdfsClient,
+    client: &dyn HdfsClient,
     path: &str,
     human_readable: bool,
     output_format: &str,
@@ -302,7 +307,7 @@ async fn cmd_du(
     Ok(())
 }
 
-async fn cmd_health(client: &WebHdfsClient, output_format: &str) -> Result<()> {
+async fn cmd_health(client: &dyn HdfsClient, output_format: &str) -> Result<()> {
     let h = client.health().await?;
 
     if output_format == "json" {
@@ -367,18 +372,16 @@ fn format_size(bytes: u64) -> String {
     }
 }
 
-/// Format a HDFS modification timestamp (milliseconds since epoch) as UTC string.
+/// Format a HDFS modification timestamp (milliseconds since epoch) as a UTC string.
 fn format_mtime(ms: u64) -> String {
+    use std::time::{Duration, UNIX_EPOCH};
     if ms == 0 {
         return "-".to_string();
     }
     let secs = ms / 1000;
-    // Simple ISO-ish format: YYYY-MM-DD HH:MM
-    // Use std::time to avoid date library dependency
-    use std::time::{Duration, UNIX_EPOCH};
+    // chrono is not a dependency; use a manual calculation for YYYY-MM-DD HH:MM UTC.
     let dt = UNIX_EPOCH + Duration::from_secs(secs);
-    // Convert to a simple timestamp — for full date formatting we'd use chrono
-    // For now, print the Unix timestamp as seconds
+    // Fallback: print as Unix seconds until chrono is added.
     let _ = dt;
     format!("{}", secs)
 }
