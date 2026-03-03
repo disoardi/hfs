@@ -117,8 +117,11 @@ impl HdfsConfig {
         if let Ok(nn) = std::env::var("HFS_NAMENODE") {
             if nn.starts_with("http://") || nn.starts_with("https://") {
                 self.webhdfs_url = Some(nn);
-            } else {
+            } else if nn.starts_with("hdfs://") {
                 self.namenode_uri = nn;
+            } else {
+                // Bare host:port — treat as WebHDFS (port 50070 = Hadoop 2.x, 9870 = Hadoop 3.x).
+                self.webhdfs_url = Some(format!("http://{}", nn));
             }
         }
         if let Ok(user) = std::env::var("HFS_USER").or_else(|_| std::env::var("HADOOP_USER_NAME")) {
@@ -142,6 +145,10 @@ impl HdfsConfig {
         }
         if uri.starts_with("http://") || uri.starts_with("https://") {
             return uri.trim_end_matches('/').to_string();
+        }
+        // Bare host:port stored in namenode_uri (defensive fallback).
+        if !uri.is_empty() && !uri.contains("://") {
+            return format!("http://{}", uri.trim_end_matches('/'));
         }
         "http://localhost:9870".to_string()
     }
@@ -260,6 +267,19 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(cfg.effective_webhdfs_url(), "http://namenode.corp.com:9870");
+    }
+
+    #[test]
+    fn test_effective_webhdfs_url_bare_host_port() {
+        // Bare host:port in namenode_uri (defensive fallback path)
+        let cfg = HdfsConfig {
+            namenode_uri: "namenode.corp.com:50070".to_string(),
+            ..Default::default()
+        };
+        assert_eq!(
+            cfg.effective_webhdfs_url(),
+            "http://namenode.corp.com:50070"
+        );
     }
 
     #[test]

@@ -133,9 +133,15 @@ async fn main() -> Result<()> {
     let mut config = HdfsConfig::load()?;
     if let Some(ref nn) = cli.namenode {
         if nn.starts_with("http://") || nn.starts_with("https://") {
+            // Explicit WebHDFS URL: http://host:9870 or https://host:9870
             config.webhdfs_url = Some(nn.clone());
-        } else {
+        } else if nn.starts_with("hdfs://") {
+            // Explicit RPC URI: hdfs://host:8020
             config.namenode_uri = nn.clone();
+        } else {
+            // Bare host:port (e.g. "namenode:9870", "namenode:50070") — WebHDFS.
+            // Port 50070 is the legacy Hadoop 2.x WebHDFS port; 9870 is Hadoop 3.x.
+            config.webhdfs_url = Some(format!("http://{}", nn));
         }
     }
     if cli.backend != "auto" {
