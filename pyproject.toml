@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "hfs-docs"
+version = "0.1.0"
+description = "Documentation for hfs — HDFS CLI without JVM"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+mkdocs-material = "^9.5"
+mkdocs-static-i18n = "^1.2"
+pymdown-extensions = "^10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

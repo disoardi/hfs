@@ -37,14 +37,13 @@ plugins:
   - search:
       lang: [it, en]
   - i18n:
-      default_language: it
-      default_language_only: false
       docs_structure: folder
       languages:
-        it:
+        - locale: it
+          default: true
           name: Italiano
           build: true
-        en:
+        - locale: en
           name: English
           build: true
           nav_translations:
