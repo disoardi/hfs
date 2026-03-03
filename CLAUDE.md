@@ -235,6 +235,93 @@ mod tests {
 
 ---
 
+## Regole Architetturali — Comportamento su Scala
+
+### Streaming obbligatorio per cat/get
+
+**Mai** allocare un buffer grande quanto il file intero. `hfs cat` e `hfs get` devono usare
+streaming puro via `read_range` in loop:
+
+```rust
+// CORRETTO — streaming a chunk
+let mut offset = 0u64;
+while offset < file_size {
+    let chunk_len = (file_size - offset).min(CHUNK_SIZE);
+    let chunk = client.read_range(path, offset, chunk_len).await?;
+    writer.write_all(&chunk).await?;
+    offset += chunk.len() as u64;
+}
+
+// SBAGLIATO — OOM su file grandi
+let data = client.read_all(path).await?;  // alloca file_size byte
+```
+
+`CHUNK_SIZE` = 64 * 1024 * 1024 (64MB), configurabile via `~/.hfs/config.toml`.
+
+### LISTSTATUS_BATCH per directory grandi
+
+Per directory con >10k file, usare l'endpoint paginato WebHDFS:
+```
+GET /webhdfs/v1{path}?op=LISTSTATUS_BATCH&startAfter={lastFileName}
+```
+Iterare finché `remainingEntries == 0`. MAI usare `LISTSTATUS` semplice su directory
+con migliaia di file — può timeout o OOM il client.
+
+Soglia: se una `LISTSTATUS` restituisce `remainingEntries > 0`, passare automaticamente
+alla modalità batch per il resto della paginazione.
+
+### Rate limiting per operazioni ricorsive
+
+Flag globale `--max-concurrency N` (default: 8): limita le richieste parallele al NameNode
+per comandi ricorsivi (`find`, `drift`, `schema /dir/`, `small-files`, `rowcount /dir/`).
+
+Implementazione: usa un semaforo (`tokio::sync::Semaphore`) con N permits.
+
+Configurabile in `~/.hfs/config.toml`:
+```toml
+max_concurrency = 8
+rpc_timeout_secs = 10
+chunk_size_mb = 64
+```
+
+### Backoff su NameNode sotto pressione
+
+Se il NameNode risponde con HTTP 503 o latenza >5s, applicare backoff esponenziale:
+1s → 2s → 4s → 8s → max 30s. Dopo 5 tentativi falliti: `HfsError::NameNodeUnavailable`.
+Non insistere mai in loop tight su un NameNode in GC pause.
+
+### Sampling per drift su directory grandi
+
+`hfs drift /path/ --against hive://db.table` su directory con migliaia di file:
+- Default: campiona al massimo 100 file (scelti uniformemente, non solo i primi)
+- Flag `--sample N` o `--all` per comportamento esplicito
+- Con `--all`: avvisa l'utente se N > 1000 file (warning, non errore)
+
+### Flag --dry-run per operazioni ricorsive
+
+Comandi che fanno molte richieste al NameNode (`drift`, `find`, `schema /dir/`, `small-files`)
+devono supportare `--dry-run`:
+- Stima il numero di file/richieste che verranno fatte
+- Stampa il piano senza eseguire
+- Esempio: `hfs drift /data/ --against hive://db.t --dry-run`
+  → `Stimati: 4.832 file Parquet (~4.832 richieste footer + 1 HMS). Usa --max-concurrency per controllare il rate.`
+
+### Posizionamento vs `hdfs dfs`
+
+`hfs` non è solo "hdfs senza JVM" — elimina problemi strutturali della CLI Java
+che causano OOM in produzione. Questo DEVE essere documentato:
+
+| Scenario | `hdfs dfs` | `hfs` |
+|----------|-----------|-------|
+| `ls` su 2M file | OOM — lista intera in RAM | Stream riga per riga |
+| `cat` su file 10GB | Carica in RAM | Streaming 64MB chunk |
+| Startup singolo comando | 4-8 secondi | 50ms |
+| `ls` in loop 1000 volte | ~6000s overhead JVM | ~50s |
+
+Quando aggiorni i docs, includi sempre questa comparazione nella pagina principale.
+
+---
+
 ## Documentazione — Regole
 
 Ogni PR che cambia comportamento osservabile (comandi, flag, output) **deve**

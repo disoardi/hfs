@@ -101,14 +101,17 @@ Obiettivi:
 
 1. Creare hfs-core/src/webhdfs.rs — WebHdfsClient che implementa HdfsClient trait
    - Usa ureq con feature "tls" (rustls, NON native-tls)
-   - list(): GET /webhdfs/v1{path}?op=LISTSTATUS
+   - list(): GET /webhdfs/v1{path}?op=LISTSTATUS (semplice, per ora)
+     IMPORTANTE: implementa già list_batch() con LISTSTATUS_BATCH + startAfter per paginazione
+     su directory grandi — list() la usa internamente se remainingEntries > 0
    - stat(): GET /webhdfs/v1{path}?op=GETFILESTATUS
    - content_summary(): GET /webhdfs/v1{path}?op=GETCONTENTSUMMARY
    - read_range(): GET /webhdfs/v1{path}?op=OPEN + header Range: bytes=N-M
    - health(): JMX endpoint ?qry=Hadoop:service=NameNode,name=FSNamesystemState
    - file_size(): stat().length
-   - Errori HTTP → HfsError (404 → NotFound, 403 → Permission, rete → Connection)
+   - Errori HTTP → HfsError (404 → NotFound, 403 → Permission, 503 → NameNodeUnavailable, rete → Connection)
    - Zero unwrap() — usa sempre ? o map_err
+   - Backoff: se NameNodeUnavailable o latenza >5s → backoff esponenziale (vedi CLAUDE.md)
 
 2. Completare hfs-core/src/config.rs
    - Parsing core-site.xml con quick-xml (NON libxml2)
@@ -279,33 +282,43 @@ Prerequisito: Docker cluster up, test Giorno 1-3 verdi.
 
 Obiettivi:
 
-1. Implementare hfs blocks in hfs/src/main.rs + hfs-core:
+1. Implementare hfs cat e hfs get con streaming obbligatorio:
+   - STREAMING PURO — mai allocare file_size byte in memoria
+   - Leggi con client.read_range() in loop, CHUNK_SIZE = 64MB (configurabile)
+   - hfs cat /path → stream su stdout chunk per chunk
+   - hfs get /hdfs/path ./local → stream su file locale
+   - Test: verifica che su file da 200MB vengano fatte ceil(200/64)=4 chiamate read_range
+     (non una sola chiamata che carica tutto)
+
+2. Implementare hfs blocks in hfs/src/main.rs + hfs-core:
    - WebHDFS: GET ?op=GETFILEBLOCKLOCATIONS → lista blocchi con DataNode e racks
    - Output: tabella blocco/offset/lunghezza/DataNodes
    - --json: JSON strutturato
 
-2. Implementare hfs replicas /path --min-replication N:
+3. Implementare hfs replicas /path --min-replication N:
    - Usa WebHDFS content_summary + per-file replication factor
    - Elenca file con replication < N
    - Default N = dfs.replication.min da core-site.xml o 1
 
-3. Completare config.rs — parsing core-site.xml completo:
+4. Completare config.rs — parsing core-site.xml + parametri hfs:
    - quick-xml per leggere property name/value
    - Mappa: fs.defaultFS, dfs.namenode.rpc-address, hadoop.security.authentication,
      dfs.replication, dfs.replication.min, dfs.webhdfs.enabled
-   - Test con tests/fixtures/core-site-minimal.xml
-   - Test con tests/fixtures/core-site-kerb.xml (ha hadoop.security.authentication=kerberos)
+   - Aggiungi sezione [hfs] in ~/.hfs/config.toml:
+     max_concurrency = 8, rpc_timeout_secs = 10, chunk_size_mb = 64
+   - Test con tests/fixtures/core-site-minimal.xml e core-site-kerb.xml
 
-4. Implementare hfs health:
+5. Implementare hfs health:
    - JMX NameNode metrics: NumLiveDataNodes, NumDeadDataNodes, NumStaleDataNodes,
      CapacityUsed, CapacityTotal, UnderReplicatedBlocks, CorruptBlocks, HAState
    - Output: dashboard testuale colorata (verde/giallo/rosso in base a soglie)
    - --json: ClusterHealth struct serializzata
 
-5. Implementare hfs small-files /path --threshold 128M:
-   - Content summary ricorsivo
+6. Implementare hfs small-files /path --threshold 128M:
+   - Content summary ricorsivo, usa --max-concurrency per non sovraccaricare NameNode
    - avg_file_size = space_consumed / file_count per ogni subdirectory
    - Stampa directory con avg < threshold, ordinate per file_count desc
+   - Supporta --dry-run: stima quante richieste verranno fatte
    - Crea fixture in Docker: docker exec hfs-test-client /load-fixtures.sh
      (lo script crea già 20 file piccoli in /test-data/small-files/)
 
@@ -367,14 +380,20 @@ Obiettivi:
    # Se Hive non è disponibile nel compose, usa HMS HTTP mock via mockito per il test
 
 3. Implementare hfs drift /path --against hive://db.table:
-   - Leggi schema di tutti i Parquet nel path (ParquetInspector)
+   - Campionamento: default max 100 file scelti uniformemente (non i primi N)
+     Flag --sample N per esplicitare, --all per tutti (warning se >1000)
+   - --dry-run: stima file trovati e richieste senza eseguire
+   - --max-concurrency rispettato: usa Semaphore tokio per le ParquetInspector calls
+   - Leggi schema di ogni file campionato (ParquetInspector)
    - Leggi schema tabella Hive (HiveMetastoreClient)
    - SchemaDiff::compare(parquet_schema, hive_schema) per ogni file
    - Output colorato: breaking change = rosso, aggiuntivo = giallo, ok = verde
    - --json: DriftReport serializzato
+   - Test: verifica che con --sample 10 su directory con 50 file vengano letti esattamente 10 footer
 
 4. Implementare hfs schema /path --against hive://db.table:
    - Schema del file/path con differenze evidenziate vs Hive
+   - Su directory: stessa logica di campionamento di drift (--sample, --all, --dry-run)
 
 5. Packaging:
    - Crea tuxbox.toml in root:
