@@ -15,7 +15,7 @@ volumes:
 
 services:
   namenode:
-    image: apache/hadoop:3.3.6
+    image: ${HADOOP_IMAGE:-apache/hadoop:3.3.6}
     hostname: namenode
     container_name: hfs-test-namenode
     networks:
@@ -44,7 +44,7 @@ services:
       start_period: 30s
 
   datanode1:
-    image: apache/hadoop:3.3.6
+    image: ${HADOOP_IMAGE:-apache/hadoop:3.3.6}
     hostname: datanode1
     container_name: hfs-test-datanode1
     networks:
@@ -64,7 +64,7 @@ services:
         condition: service_healthy
 
   datanode2:
-    image: apache/hadoop:3.3.6
+    image: ${HADOOP_IMAGE:-apache/hadoop:3.3.6}
     hostname: datanode2
     container_name: hfs-test-datanode2
     networks:
@@ -85,7 +85,7 @@ services:
 
   # Hive Metastore (standalone mode, metastore DB in Derby)
   hive-metastore:
-    image: apache/hive:3.1.3
+    image: ${HIVE_IMAGE:-apache/hive:3.1.3}
     hostname: hive-metastore
     container_name: hfs-test-hms
     networks:
@@ -110,7 +110,7 @@ services:
 
   # Client container: used to load fixtures and for manual testing
   hdfs-client:
-    image: apache/hadoop:3.3.6
+    image: ${HADOOP_IMAGE:-apache/hadoop:3.3.6}
     hostname: hdfs-client
     container_name: hfs-test-client
     networks:

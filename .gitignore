@@ -7,3 +7,6 @@ Cargo.lock
 
 # Kerberos keytabs — generated at runtime by setup-principals.sh, never commit
 docker/init/kerb/keytabs/*.keytab
+
+# Local Docker environment overrides — copy from docker/.env.example
+docker/.env

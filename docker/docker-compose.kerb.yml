@@ -1,6 +1,8 @@
 # Test cluster con Kerberos: HDFS + FreeIPA KDC
 # FreeIPA agisce da KDC e DNS per il dominio hfs.test.
 #
+# PREREQUISITO: copia docker/.env.example → docker/.env e personalizza.
+#
 # STARTUP SEQUENCE (importante — rispettare l'ordine):
 #
 #   1. docker compose -f docker/docker-compose.kerb.yml up -d freeipa
@@ -38,7 +40,7 @@ volumes:
 services:
   # ── FreeIPA KDC ──────────────────────────────────────────────────────────────
   freeipa:
-    image: freeipa/freeipa-server:fedora-39
+    image: ${FREEIPA_IMAGE:-freeipa/freeipa-server:fedora-42}
     hostname: ipa.hfs.test
     container_name: hfs-kerb-ipa
     networks:
@@ -54,10 +56,10 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
     environment:
       IPA_SERVER_INSTALL_OPTS: >-
-        --realm=HFS.TEST
+        --realm=${KRB5_REALM:-HFS.TEST}
         --domain=hfs.test
-        --ds-password=Admin1234
-        --admin-password=Admin1234
+        --ds-password=${IPA_ADMIN_PASSWORD:-Admin1234}
+        --admin-password=${IPA_ADMIN_PASSWORD:-Admin1234}
         --no-ntp
         --unattended
     sysctls:
