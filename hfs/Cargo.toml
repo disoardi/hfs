@@ -1,6 +1,6 @@
 [package]
 name = "hfs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "HDFS CLI — inspect files, schema, blocks and cluster health without JVM"
 license = "Apache-2.0"

@@ -10,7 +10,7 @@ use hfs_core::{HdfsClient, HdfsClientBuilder, HdfsConfig};
 #[command(
     name = "hfs",
     about = "HDFS filesystem tool — no JVM required",
-    version = "0.1.0",
+    version = "0.1.1",
     long_about = None,
 )]
 struct Cli {
@@ -132,28 +132,7 @@ async fn main() -> Result<()> {
     // Build config from env/file, then apply CLI overrides.
     let mut config = HdfsConfig::load()?;
     if let Some(ref nn) = cli.namenode {
-        if nn.starts_with("http://") || nn.starts_with("https://") {
-            // Explicit WebHDFS URL: http://host:9870 or https://host:9870
-            config.webhdfs_url = Some(nn.clone());
-        } else if nn.starts_with("hdfs://") {
-            // Explicit RPC URI: hdfs://host:8020
-            config.namenode_uri = nn.clone();
-        } else {
-            // Bare host:port — infer intent from port number.
-            // 9870 (Hadoop 3.x WebHDFS) or 50070 (Hadoop 2.x/HDP WebHDFS) → HTTP.
-            // 8020/8021 (HDFS RPC) or unknown port → set namenode_uri so auto can probe RPC first.
-            let port = nn.split(':').last().and_then(|p| p.parse::<u16>().ok());
-            match port {
-                Some(9870) | Some(50070) => {
-                    config.webhdfs_url = Some(format!("http://{}", nn));
-                }
-                _ => {
-                    // RPC port (8020, 8021) or unrecognised — let auto-detect probe RPC first,
-                    // then fall back to WebHDFS on the default port (9870).
-                    config.namenode_uri = format!("hdfs://{}", nn);
-                }
-            }
-        }
+        config.apply_namenode_str(nn);
     }
     if cli.backend != "auto" {
         config.preferred_backend = cli.backend.clone();

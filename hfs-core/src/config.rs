@@ -115,30 +115,36 @@ impl HdfsConfig {
 
     fn merge_from_env(&mut self) {
         if let Ok(nn) = std::env::var("HFS_NAMENODE") {
-            if nn.starts_with("http://") || nn.starts_with("https://") {
-                self.webhdfs_url = Some(nn);
-            } else if nn.starts_with("hdfs://") {
-                self.namenode_uri = nn;
-            } else {
-                // Bare host:port — infer intent from port number.
-                // 9870 (Hadoop 3.x WebHDFS) or 50070 (Hadoop 2.x/HDP WebHDFS) → HTTP.
-                // 8020/8021 (HDFS RPC) or unknown → namenode_uri so auto probes RPC first.
-                let port = nn.split(':').last().and_then(|p| p.parse::<u16>().ok());
-                match port {
-                    Some(9870) | Some(50070) => {
-                        self.webhdfs_url = Some(format!("http://{}", nn));
-                    }
-                    _ => {
-                        self.namenode_uri = format!("hdfs://{}", nn);
-                    }
-                }
-            }
+            self.apply_namenode_str(&nn);
         }
         if let Ok(user) = std::env::var("HFS_USER").or_else(|_| std::env::var("HADOOP_USER_NAME")) {
             self.hdfs_user = Some(user);
         }
         if let Ok(backend) = std::env::var("HFS_BACKEND") {
             self.preferred_backend = backend;
+        }
+    }
+
+    /// Apply a namenode string (from CLI or env) to this config.
+    /// Exported for testability without env var manipulation.
+    pub fn apply_namenode_str(&mut self, nn: &str) {
+        if nn.starts_with("http://") || nn.starts_with("https://") {
+            self.webhdfs_url = Some(nn.to_string());
+        } else if nn.starts_with("hdfs://") {
+            self.namenode_uri = nn.to_string();
+        } else {
+            // Bare host:port — infer intent from port number.
+            // 9870 (Hadoop 3.x WebHDFS) or 50070 (Hadoop 2.x/HDP WebHDFS) → HTTP.
+            // 8020/8021 (HDFS RPC) or unknown → namenode_uri so auto probes RPC first.
+            let port = nn.split(':').last().and_then(|p| p.parse::<u16>().ok());
+            match port {
+                Some(9870) | Some(50070) => {
+                    self.webhdfs_url = Some(format!("http://{}", nn));
+                }
+                _ => {
+                    self.namenode_uri = format!("hdfs://{}", nn);
+                }
+            }
         }
     }
 
@@ -293,24 +299,20 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_from_env_bare_rpc_port_sets_namenode_uri() {
+    fn test_apply_namenode_rpc_port_sets_namenode_uri() {
         // host:8020 (RPC port) must set namenode_uri, not webhdfs_url,
         // so auto-detect can probe RPC first.
-        std::env::set_var("HFS_NAMENODE", "namenode.corp.com:8020");
         let mut cfg = HdfsConfig::default();
-        cfg.merge_from_env();
-        std::env::remove_var("HFS_NAMENODE");
+        cfg.apply_namenode_str("namenode.corp.com:8020");
         assert_eq!(cfg.namenode_uri, "hdfs://namenode.corp.com:8020");
         assert!(cfg.webhdfs_url.is_none());
     }
 
     #[test]
-    fn test_merge_from_env_bare_webhdfs_port_sets_url() {
-        // host:9870 must stay as WebHDFS URL.
-        std::env::set_var("HFS_NAMENODE", "namenode.corp.com:9870");
+    fn test_apply_namenode_webhdfs_port_sets_url() {
+        // host:9870 must set webhdfs_url directly.
         let mut cfg = HdfsConfig::default();
-        cfg.merge_from_env();
-        std::env::remove_var("HFS_NAMENODE");
+        cfg.apply_namenode_str("namenode.corp.com:9870");
         assert_eq!(
             cfg.webhdfs_url.as_deref(),
             Some("http://namenode.corp.com:9870")
@@ -319,12 +321,10 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_from_env_bare_hdp2_port_sets_url() {
-        // host:50070 (HDP2 WebHDFS) must stay as WebHDFS URL.
-        std::env::set_var("HFS_NAMENODE", "namenode.corp.com:50070");
+    fn test_apply_namenode_hdp2_port_sets_url() {
+        // host:50070 (HDP2 WebHDFS) must set webhdfs_url.
         let mut cfg = HdfsConfig::default();
-        cfg.merge_from_env();
-        std::env::remove_var("HFS_NAMENODE");
+        cfg.apply_namenode_str("namenode.corp.com:50070");
         assert_eq!(
             cfg.webhdfs_url.as_deref(),
             Some("http://namenode.corp.com:50070")
