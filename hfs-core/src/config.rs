@@ -136,7 +136,7 @@ impl HdfsConfig {
             // Bare host:port — infer intent from port number.
             // 9870 (Hadoop 3.x WebHDFS) or 50070 (Hadoop 2.x/HDP WebHDFS) → HTTP.
             // 8020/8021 (HDFS RPC) or unknown → namenode_uri so auto probes RPC first.
-            let port = nn.split(':').last().and_then(|p| p.parse::<u16>().ok());
+            let port = nn.split(':').next_back().and_then(|p| p.parse::<u16>().ok());
             match port {
                 Some(9870) | Some(50070) => {
                     self.webhdfs_url = Some(format!("http://{}", nn));
