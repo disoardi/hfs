@@ -57,7 +57,10 @@ impl Default for HdfsConfig {
 }
 
 impl HdfsConfig {
-    /// Build configuration by reading all sources in priority order.
+    /// Build configuration by reading all sources in priority order:
+    ///   1. /etc/hadoop/conf/core-site.xml
+    ///   2. ~/.hfs/profile.env  (per-user profile, see ~/.hfs/profile.env.example)
+    ///   3. Environment variables (HFS_NAMENODE, HFS_USER, …) — highest priority
     pub fn load() -> Result<Self, HfsError> {
         let mut cfg = Self::default();
 
@@ -68,6 +71,7 @@ impl HdfsConfig {
             }
         }
 
+        cfg.merge_from_profile_env();
         cfg.merge_from_env();
 
         if cfg.namenode_uri.is_empty() && cfg.webhdfs_url.is_none() {
@@ -77,6 +81,14 @@ impl HdfsConfig {
         Ok(cfg)
     }
 
+    /// The effective HDFS user for this session.
+    /// Defaults to "hdfs" when no user is explicitly configured, so that
+    /// connections from non-Hadoop Linux users (e.g. LDAP/AD accounts without
+    /// a local /etc/passwd entry) work out of the box.
+    pub fn effective_user(&self) -> &str {
+        self.hdfs_user.as_deref().unwrap_or("hdfs")
+    }
+
     fn hadoop_conf_candidates() -> Vec<PathBuf> {
         let mut candidates = Vec::new();
         candidates.push(PathBuf::from("/etc/hadoop/conf/core-site.xml"));
@@ -84,6 +96,70 @@ impl HdfsConfig {
             candidates.push(PathBuf::from(dir).join("core-site.xml"));
         }
         candidates
+    }
+
+    /// Load per-user connection profile from ~/.hfs/profile.env.
+    ///
+    /// Format: KEY=VALUE lines, # comments, blank lines ignored.
+    /// Supported keys: HFS_NAMENODE, HFS_USER, HADOOP_USER_NAME, HFS_BACKEND,
+    ///                 HADOOP_CONF_DIR, KRB5_PRINCIPAL, KRB5_KEYTAB.
+    ///
+    /// Only sets fields that are not yet set (env vars applied after will override).
+    fn merge_from_profile_env(&mut self) {
+        let home = match std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
+            Ok(h) => h,
+            Err(_) => return,
+        };
+        let profile_path = PathBuf::from(home).join(".hfs").join("profile.env");
+        let content = match std::fs::read_to_string(&profile_path) {
+            Ok(c) => c,
+            Err(_) => return, // file absent or unreadable — silently skip
+        };
+        for line in content.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            if let Some((key, value)) = line.split_once('=') {
+                let key = key.trim();
+                let value = value.trim().trim_matches('"').trim_matches('\'');
+                match key {
+                    "HFS_NAMENODE" => {
+                        if self.webhdfs_url.is_none() && self.namenode_uri.is_empty() {
+                            self.apply_namenode_str(value);
+                        }
+                    }
+                    "HFS_USER" | "HADOOP_USER_NAME" => {
+                        if self.hdfs_user.is_none() {
+                            self.hdfs_user = Some(value.to_string());
+                        }
+                    }
+                    "HFS_BACKEND" => {
+                        if self.preferred_backend == "auto" {
+                            self.preferred_backend = value.to_string();
+                        }
+                    }
+                    "HADOOP_CONF_DIR" => {
+                        // Re-parse core-site.xml from this dir (only if not already loaded)
+                        if self.raw_hadoop_props.is_empty() {
+                            let site = PathBuf::from(value).join("core-site.xml");
+                            let _ = self.merge_from_core_site(&site);
+                        }
+                    }
+                    "KRB5_PRINCIPAL" => {
+                        if self.kerberos_principal.is_none() {
+                            self.kerberos_principal = Some(value.to_string());
+                        }
+                    }
+                    "KRB5_KEYTAB" => {
+                        if self.keytab_path.is_none() {
+                            self.keytab_path = Some(PathBuf::from(value));
+                        }
+                    }
+                    _ => {} // unknown key — ignore
+                }
+            }
+        }
     }
 
     /// Parse a core-site.xml file and merge relevant properties.

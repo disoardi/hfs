@@ -41,34 +41,48 @@ impl HdfsClientBuilder {
     }
 
     fn build_webhdfs(config: &HdfsConfig) -> Box<dyn HdfsClient> {
-        Box::new(WebHdfsClient::new(&config.effective_webhdfs_url()))
+        Box::new(WebHdfsClient::new_with_user(
+            &config.effective_webhdfs_url(),
+            config.effective_user(),
+        ))
     }
 
     fn build_rpc(config: &HdfsConfig) -> Box<dyn HdfsClient> {
         let uri = config.namenode_uri.clone();
-        // hdfs-native Client::new() can panic when OS user resolution fails (e.g. LDAP/AD
-        // accounts without a local /etc/passwd entry). Catch that and fall back gracefully.
+        // Set HADOOP_USER_NAME so hdfs-native uses our configured user instead of
+        // probing the OS (which panics for LDAP/AD accounts without /etc/passwd entries).
+        Self::set_hadoop_user(config.effective_user());
+        // hdfs-native Client::new() can still panic in edge cases — catch gracefully.
         match std::panic::catch_unwind(AssertUnwindSafe(|| RpcClient::new(&uri))) {
             Ok(Ok(c)) => Box::new(c),
             Ok(Err(e)) => {
                 eprintln!("[hfs] RPC init failed ({}); falling back to WebHDFS", e);
-                eprintln!("      Tip: set HADOOP_USER_NAME=<user> to fix user resolution");
-                Box::new(WebHdfsClient::new(&config.effective_webhdfs_url()))
+                Box::new(WebHdfsClient::new_with_user(
+                    &config.effective_webhdfs_url(),
+                    config.effective_user(),
+                ))
             }
             Err(_) => {
-                eprintln!("[hfs] RPC init panicked (OS user resolution failed); falling back to WebHDFS");
-                eprintln!("      Tip: set HADOOP_USER_NAME=<user> to fix this");
-                Box::new(WebHdfsClient::new(&config.effective_webhdfs_url()))
+                eprintln!("[hfs] RPC init panicked; falling back to WebHDFS");
+                eprintln!("      Tip: set HFS_USER=<user> (or HADOOP_USER_NAME) to fix this");
+                Box::new(WebHdfsClient::new_with_user(
+                    &config.effective_webhdfs_url(),
+                    config.effective_user(),
+                ))
             }
         }
     }
 
     async fn build_auto(config: &HdfsConfig) -> Box<dyn HdfsClient> {
+        let webhdfs =
+            || WebHdfsClient::new_with_user(&config.effective_webhdfs_url(), config.effective_user());
+
         // Only attempt RPC when we have an explicit hdfs:// URI.
         if config.namenode_uri.starts_with("hdfs://") {
             let uri = config.namenode_uri.clone();
-            // Wrap in catch_unwind: hdfs-native can panic on OS user resolution failure
-            // (e.g. LDAP/AD accounts without a local /etc/passwd entry).
+            // Set HADOOP_USER_NAME before Client::new() so hdfs-native doesn't probe the OS.
+            Self::set_hadoop_user(config.effective_user());
+            // Also wrap in catch_unwind in case user resolution still fails.
             let rpc_init =
                 std::panic::catch_unwind(AssertUnwindSafe(|| RpcClient::new(&uri)));
 
@@ -78,11 +92,7 @@ impl HdfsClientBuilder {
                         .await;
 
                 match probe {
-                    Ok(Ok(_)) => {
-                        return Box::new(rpc);
-                    }
-                    Ok(Err(HfsError::NotFound(_))) => {
-                        // "/" might not exist but the cluster is reachable — use RPC.
+                    Ok(Ok(_)) | Ok(Err(HfsError::NotFound(_))) => {
                         return Box::new(rpc);
                     }
                     _ => {
@@ -90,10 +100,26 @@ impl HdfsClientBuilder {
                     }
                 }
             }
-            // RPC init panicked (user resolution) or construction failed → WebHDFS.
         }
 
-        Box::new(WebHdfsClient::new(&config.effective_webhdfs_url()))
+        Box::new(webhdfs())
+    }
+
+    /// Set HADOOP_USER_NAME in the process environment so that hdfs-native resolves
+    /// the user from our config rather than calling getpwuid (which fails for LDAP/AD
+    /// accounts without a local /etc/passwd entry).
+    ///
+    /// This is called only at client construction time, before any threads are spawned
+    /// by the builder itself — safe for single-threaded Tokio startup.
+    fn set_hadoop_user(user: &str) {
+        // Only set if not already overridden by the caller's environment.
+        if std::env::var("HADOOP_USER_NAME").is_err() {
+            // SAFETY: called once at startup before any concurrent env reads.
+            #[allow(unused_unsafe)]
+            unsafe {
+                std::env::set_var("HADOOP_USER_NAME", user);
+            }
+        }
     }
 }
 

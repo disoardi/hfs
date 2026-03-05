@@ -148,12 +148,20 @@ struct RemoteException {
 pub struct WebHdfsClient {
     /// Root URL of the NameNode WebHDFS endpoint, e.g. "http://namenode:9870"
     base_url: String,
+    /// HDFS user for simple (non-Kerberos) authentication via &user.name= query param.
+    /// Defaults to "hdfs" so connections from non-Hadoop Linux accounts work out of the box.
+    user: String,
     agent: ureq::Agent,
 }
 
 impl WebHdfsClient {
-    /// Create a new client pointing at `base_url` (e.g. "http://localhost:9870").
+    /// Create a new client pointing at `base_url` with default user "hdfs".
     pub fn new(base_url: &str) -> Self {
+        Self::new_with_user(base_url, "hdfs")
+    }
+
+    /// Create a new client pointing at `base_url` with the given HDFS user.
+    pub fn new_with_user(base_url: &str, user: &str) -> Self {
         let agent = ureq::AgentBuilder::new()
             .timeout_connect(Duration::from_secs(10))
             .timeout(Duration::from_secs(60))
@@ -161,6 +169,7 @@ impl WebHdfsClient {
             .build();
         Self {
             base_url: base_url.trim_end_matches('/').to_string(),
+            user: user.to_string(),
             agent,
         }
     }
@@ -194,18 +203,14 @@ impl WebHdfsClient {
         base_url: &str,
         path: &str,
         start_after: &str,
+        user: &str,
     ) -> Result<(Vec<WFileStatus>, u64), HfsError> {
         let url = if start_after.is_empty() {
-            format!(
-                "{}/webhdfs/v1{}?op=LISTSTATUS_BATCH",
-                base_url,
-                normalize_path(path)
-            )
+            op_url(base_url, path, "LISTSTATUS_BATCH", user)
         } else {
             format!(
-                "{}/webhdfs/v1{}?op=LISTSTATUS_BATCH&startAfter={}",
-                base_url,
-                normalize_path(path),
+                "{}&startAfter={}",
+                op_url(base_url, path, "LISTSTATUS_BATCH", user),
                 start_after
             )
         };
@@ -253,6 +258,7 @@ impl WebHdfsClient {
         let base_url = self.base_url.clone();
         let agent = self.agent.clone();
         let path = path.to_string();
+        let user = self.user.clone();
 
         task::spawn_blocking(move || {
             let mut all: Vec<FileStatus> = Vec::new();
@@ -260,7 +266,7 @@ impl WebHdfsClient {
 
             loop {
                 let (batch, remaining) =
-                    WebHdfsClient::fetch_batch(&agent, &base_url, &path, &start_after)?;
+                    WebHdfsClient::fetch_batch(&agent, &base_url, &path, &start_after, &user)?;
                 let last_suffix = batch.last().map(|s| s.path_suffix.clone());
                 let statuses: Vec<FileStatus> = batch
                     .into_iter()
@@ -288,14 +294,10 @@ impl HdfsClient for WebHdfsClient {
         let base_url = self.base_url.clone();
         let agent = self.agent.clone();
         let path = path.to_string();
+        let user = self.user.clone();
 
         task::spawn_blocking(move || {
-            // First: try simple LISTSTATUS
-            let url = format!(
-                "{}/webhdfs/v1{}?op=LISTSTATUS",
-                base_url,
-                normalize_path(&path)
-            );
+            let url = op_url(&base_url, &path, "LISTSTATUS", &user);
             let resp = agent
                 .get(&url)
                 .call()
@@ -335,13 +337,10 @@ impl HdfsClient for WebHdfsClient {
         let base_url = self.base_url.clone();
         let agent = self.agent.clone();
         let path = path.to_string();
+        let user = self.user.clone();
 
         task::spawn_blocking(move || {
-            let url = format!(
-                "{}/webhdfs/v1{}?op=GETFILESTATUS",
-                base_url,
-                normalize_path(&path)
-            );
+            let url = op_url(&base_url, &path, "GETFILESTATUS", &user);
             let resp = agent
                 .get(&url)
                 .call()
@@ -366,13 +365,10 @@ impl HdfsClient for WebHdfsClient {
         let base_url = self.base_url.clone();
         let agent = self.agent.clone();
         let path = path.to_string();
+        let user = self.user.clone();
 
         task::spawn_blocking(move || {
-            let url = format!(
-                "{}/webhdfs/v1{}?op=GETCONTENTSUMMARY",
-                base_url,
-                normalize_path(&path)
-            );
+            let url = op_url(&base_url, &path, "GETCONTENTSUMMARY", &user);
             let resp = agent
                 .get(&url)
                 .call()
@@ -405,13 +401,10 @@ impl HdfsClient for WebHdfsClient {
         let base_url = self.base_url.clone();
         let agent = self.agent.clone();
         let path = path.to_string();
+        let user = self.user.clone();
 
         task::spawn_blocking(move || {
-            let url = format!(
-                "{}/webhdfs/v1{}?op=GETFILEBLOCKLOCATIONS",
-                base_url,
-                normalize_path(&path)
-            );
+            let url = op_url(&base_url, &path, "GETFILEBLOCKLOCATIONS", &user);
             let resp = agent
                 .get(&url)
                 .call()
@@ -522,12 +515,12 @@ impl HdfsClient for WebHdfsClient {
         let base_url = self.base_url.clone();
         let agent = self.agent.clone();
         let path = path.to_string();
+        let user = self.user.clone();
 
         task::spawn_blocking(move || {
             let url = format!(
-                "{}/webhdfs/v1{}?op=MKDIRS&createParent={}",
-                base_url,
-                normalize_path(&path),
+                "{}&createParent={}",
+                op_url(&base_url, &path, "MKDIRS", &user),
                 create_parent
             );
             let resp = agent
@@ -550,12 +543,12 @@ impl HdfsClient for WebHdfsClient {
         let base_url = self.base_url.clone();
         let agent = self.agent.clone();
         let path = path.to_string();
+        let user = self.user.clone();
 
         task::spawn_blocking(move || {
             let url = format!(
-                "{}/webhdfs/v1{}?op=DELETE&recursive={}",
-                base_url,
-                normalize_path(&path),
+                "{}&recursive={}",
+                op_url(&base_url, &path, "DELETE", &user),
                 recursive
             );
             let resp = agent
@@ -583,12 +576,12 @@ impl HdfsClient for WebHdfsClient {
         let base_url = self.base_url.clone();
         let agent = self.agent.clone();
         let path = path.to_string();
+        let user = self.user.clone();
 
         task::spawn_blocking(move || {
             let url = format!(
-                "{}/webhdfs/v1{}?op=OPEN&offset={}&length={}&buffersize=131072",
-                base_url,
-                normalize_path(&path),
+                "{}&offset={}&length={}&buffersize=131072",
+                op_url(&base_url, &path, "OPEN", &user),
                 offset,
                 length
             );
@@ -618,6 +611,18 @@ impl HdfsClient for WebHdfsClient {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/// Build a WebHDFS operation URL with user.name for simple (non-Kerberos) auth.
+/// Additional query params can be appended to the returned string.
+fn op_url(base_url: &str, path: &str, op: &str, user: &str) -> String {
+    format!(
+        "{}/webhdfs/v1{}?op={}&user.name={}",
+        base_url,
+        normalize_path(path),
+        op,
+        user
+    )
+}
 
 /// Ensure path starts with / and doesn't have a trailing slash (except root).
 fn normalize_path(path: &str) -> String {
@@ -721,7 +726,7 @@ mod tests {
     async fn test_list_returns_file_statuses() {
         let mut server = Server::new_async().await;
         let mock = server
-            .mock("GET", "/webhdfs/v1/?op=LISTSTATUS")
+            .mock("GET", "/webhdfs/v1/?op=LISTSTATUS&user.name=hdfs")
             .with_status(200)
             .with_header("content-type", "application/json")
             .with_body(LISTSTATUS_JSON)
@@ -745,7 +750,7 @@ mod tests {
     async fn test_stat_not_found_returns_error() {
         let mut server = Server::new_async().await;
         let mock = server
-            .mock("GET", "/webhdfs/v1/no/such/path?op=GETFILESTATUS")
+            .mock("GET", "/webhdfs/v1/no/such/path?op=GETFILESTATUS&user.name=hdfs")
             .with_status(200) // WebHDFS may return 200 with RemoteException body
             .with_header("content-type", "application/json")
             .with_body(GETFILESTATUS_NOT_FOUND)
@@ -765,7 +770,7 @@ mod tests {
     async fn test_stat_404_returns_not_found() {
         let mut server = Server::new_async().await;
         let mock = server
-            .mock("GET", "/webhdfs/v1/missing?op=GETFILESTATUS")
+            .mock("GET", "/webhdfs/v1/missing?op=GETFILESTATUS&user.name=hdfs")
             .with_status(404)
             .create_async()
             .await;
