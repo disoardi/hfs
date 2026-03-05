@@ -139,9 +139,20 @@ async fn main() -> Result<()> {
             // Explicit RPC URI: hdfs://host:8020
             config.namenode_uri = nn.clone();
         } else {
-            // Bare host:port (e.g. "namenode:9870", "namenode:50070") — WebHDFS.
-            // Port 50070 is the legacy Hadoop 2.x WebHDFS port; 9870 is Hadoop 3.x.
-            config.webhdfs_url = Some(format!("http://{}", nn));
+            // Bare host:port — infer intent from port number.
+            // 9870 (Hadoop 3.x WebHDFS) or 50070 (Hadoop 2.x/HDP WebHDFS) → HTTP.
+            // 8020/8021 (HDFS RPC) or unknown port → set namenode_uri so auto can probe RPC first.
+            let port = nn.split(':').last().and_then(|p| p.parse::<u16>().ok());
+            match port {
+                Some(9870) | Some(50070) => {
+                    config.webhdfs_url = Some(format!("http://{}", nn));
+                }
+                _ => {
+                    // RPC port (8020, 8021) or unrecognised — let auto-detect probe RPC first,
+                    // then fall back to WebHDFS on the default port (9870).
+                    config.namenode_uri = format!("hdfs://{}", nn);
+                }
+            }
         }
     }
     if cli.backend != "auto" {

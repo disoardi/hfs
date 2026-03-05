@@ -1,10 +1,13 @@
 // HdfsClientBuilder — auto-selects backend based on config and availability
 //
-// Selection logic for --backend auto:
-//   1. If config has an hdfs:// URI → try RPC (hdfs-native, port 8020)
-//      - Probe with get_file_info("/"); if it succeeds within PROBE_TIMEOUT_MS, use RPC
-//      - If probe times out or fails → fall back to WebHDFS
-//   2. Otherwise (http:// URL or no config) → WebHDFS directly
+// Selection logic for --backend auto (RPC is preferred over WebHDFS):
+//   1. If config has an hdfs:// URI (explicit or derived from bare host:port with RPC port)
+//      → probe RPC within PROBE_TIMEOUT_MS; on success use RPC, on failure fall back to WebHDFS
+//   2. Otherwise (explicit http:// URL) → WebHDFS directly
+//
+// Bare host:port heuristic (applied before builder, in config parsing):
+//   port 9870 / 50070  → webhdfs_url  (WebHDFS path)
+//   port 8020 / 8021 or unknown → namenode_uri as hdfs://  (RPC probe path)
 //
 // For --backend rpc:
 //   - Connect via RPC; if construction fails, return error (no fallback)
