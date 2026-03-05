@@ -14,6 +14,7 @@
 // For --backend webhdfs:
 //   - Always use WebHDFS, regardless of namenode_uri
 
+use std::panic::AssertUnwindSafe;
 use std::time::Duration;
 
 use crate::client::HdfsClient;
@@ -44,11 +45,19 @@ impl HdfsClientBuilder {
     }
 
     fn build_rpc(config: &HdfsConfig) -> Box<dyn HdfsClient> {
-        match RpcClient::new(&config.namenode_uri) {
-            Ok(c) => Box::new(c),
-            Err(e) => {
-                // Forced RPC failed; fall back with a warning rather than panicking.
+        let uri = config.namenode_uri.clone();
+        // hdfs-native Client::new() can panic when OS user resolution fails (e.g. LDAP/AD
+        // accounts without a local /etc/passwd entry). Catch that and fall back gracefully.
+        match std::panic::catch_unwind(AssertUnwindSafe(|| RpcClient::new(&uri))) {
+            Ok(Ok(c)) => Box::new(c),
+            Ok(Err(e)) => {
                 eprintln!("[hfs] RPC init failed ({}); falling back to WebHDFS", e);
+                eprintln!("      Tip: set HADOOP_USER_NAME=<user> to fix user resolution");
+                Box::new(WebHdfsClient::new(&config.effective_webhdfs_url()))
+            }
+            Err(_) => {
+                eprintln!("[hfs] RPC init panicked (OS user resolution failed); falling back to WebHDFS");
+                eprintln!("      Tip: set HADOOP_USER_NAME=<user> to fix this");
                 Box::new(WebHdfsClient::new(&config.effective_webhdfs_url()))
             }
         }
@@ -57,7 +66,13 @@ impl HdfsClientBuilder {
     async fn build_auto(config: &HdfsConfig) -> Box<dyn HdfsClient> {
         // Only attempt RPC when we have an explicit hdfs:// URI.
         if config.namenode_uri.starts_with("hdfs://") {
-            if let Ok(rpc) = RpcClient::new(&config.namenode_uri) {
+            let uri = config.namenode_uri.clone();
+            // Wrap in catch_unwind: hdfs-native can panic on OS user resolution failure
+            // (e.g. LDAP/AD accounts without a local /etc/passwd entry).
+            let rpc_init =
+                std::panic::catch_unwind(AssertUnwindSafe(|| RpcClient::new(&uri)));
+
+            if let Ok(Ok(rpc)) = rpc_init {
                 let probe =
                     tokio::time::timeout(Duration::from_millis(PROBE_TIMEOUT_MS), rpc.stat("/"))
                         .await;
@@ -75,6 +90,7 @@ impl HdfsClientBuilder {
                     }
                 }
             }
+            // RPC init panicked (user resolution) or construction failed → WebHDFS.
         }
 
         Box::new(WebHdfsClient::new(&config.effective_webhdfs_url()))
