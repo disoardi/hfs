@@ -1,17 +1,18 @@
 // HdfsConfig — configuration with automatic core-site.xml reading
 //
 // Priority (lowest to highest):
-//   1. Built-in defaults (localhost:9870)
-//   2. /etc/hadoop/conf/core-site.xml
-//   3. $HADOOP_CONF_DIR/core-site.xml
-//   4. Environment variables (HFS_NAMENODE, HFS_USER, HFS_BACKEND)
-//   5. CLI flags via merge_cli()
+//   1. Built-in defaults
+//   2. /etc/hadoop/conf/  (core-site.xml, hdfs-site.xml)
+//   3. ~/.hfs/profile.env  (or --env-file <path>)
+//      └─ may reference HADOOP_CONF_DIR → loads that dir's XML files
+//   4. Environment variables (HFS_NAMENODE, HFS_USER, HFS_BACKEND, …)
+//   5. CLI flags (--namenode, --backend, …)  — highest priority
 
 use crate::error::HfsError;
 use quick_xml::events::Event;
 use quick_xml::Reader;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct HdfsConfig {
@@ -57,21 +58,32 @@ impl Default for HdfsConfig {
 }
 
 impl HdfsConfig {
-    /// Build configuration by reading all sources in priority order:
-    ///   1. /etc/hadoop/conf/core-site.xml
-    ///   2. ~/.hfs/profile.env  (per-user profile, see ~/.hfs/profile.env.example)
-    ///   3. Environment variables (HFS_NAMENODE, HFS_USER, …) — highest priority
-    pub fn load() -> Result<Self, HfsError> {
+    /// Build configuration by reading all sources in priority order.
+    ///
+    /// `env_file`: path to a .env profile (from `--env-file`).
+    ///   If `None`, falls back to `~/.hfs/profile.env`.
+    ///   The profile may contain `HADOOP_CONF_DIR=/path/to/conf` which causes
+    ///   hfs to read core-site.xml, hdfs-site.xml (and other Hadoop XML files)
+    ///   from that directory.
+    pub fn load(env_file: Option<&Path>) -> Result<Self, HfsError> {
         let mut cfg = Self::default();
 
-        for path in Self::hadoop_conf_candidates() {
-            if path.exists() {
-                cfg.merge_from_core_site(&path)?;
+        // Layer 1 — system Hadoop conf (lowest priority)
+        for dir in ["/etc/hadoop/conf", "/usr/lib/hadoop/etc/hadoop"] {
+            let p = PathBuf::from(dir);
+            if p.exists() {
+                cfg.load_hadoop_conf_dir(&p);
                 break;
             }
         }
 
-        cfg.merge_from_profile_env();
+        // Layer 2 — per-user profile or explicit --env-file
+        match env_file {
+            Some(path) => cfg.merge_from_env_file(path),
+            None => cfg.merge_from_profile_env(),
+        }
+
+        // Layer 3 — process environment variables (highest priority)
         cfg.merge_from_env();
 
         if cfg.namenode_uri.is_empty() && cfg.webhdfs_url.is_none() {
@@ -89,76 +101,140 @@ impl HdfsConfig {
         self.hdfs_user.as_deref().unwrap_or("hdfs")
     }
 
-    fn hadoop_conf_candidates() -> Vec<PathBuf> {
-        let mut candidates = Vec::new();
-        candidates.push(PathBuf::from("/etc/hadoop/conf/core-site.xml"));
-        if let Ok(dir) = std::env::var("HADOOP_CONF_DIR") {
-            candidates.push(PathBuf::from(dir).join("core-site.xml"));
+    /// Load all Hadoop XML config files from a directory.
+    ///
+    /// Files read (in order, later values override earlier ones within the same key):
+    ///   core-site.xml, hdfs-site.xml, mapred-site.xml, yarn-site.xml
+    ///
+    /// Properties extracted:
+    ///   fs.defaultFS / fs.default.name     → namenode_uri
+    ///   dfs.namenode.http-address          → webhdfs_url (if no http scheme)
+    ///   dfs.namenode.rpc-address           → namenode_uri (hdfs://host:port)
+    ///   hadoop.security.authentication     → kerberos indicator
+    pub fn load_hadoop_conf_dir(&mut self, dir: &Path) {
+        const HADOOP_XML_FILES: &[&str] =
+            &["core-site.xml", "hdfs-site.xml", "mapred-site.xml", "yarn-site.xml"];
+
+        for filename in HADOOP_XML_FILES {
+            let path = dir.join(filename);
+            if path.exists() {
+                let _ = self.merge_from_core_site(&path);
+            }
         }
-        candidates
+
+        // After merging all files, extract hdfs-site properties not handled by merge_from_core_site
+        self.apply_hdfs_site_props();
     }
 
-    /// Load per-user connection profile from ~/.hfs/profile.env.
-    ///
-    /// Format: KEY=VALUE lines, # comments, blank lines ignored.
-    /// Supported keys: HFS_NAMENODE, HFS_USER, HADOOP_USER_NAME, HFS_BACKEND,
-    ///                 HADOOP_CONF_DIR, KRB5_PRINCIPAL, KRB5_KEYTAB.
-    ///
-    /// Only sets fields that are not yet set (env vars applied after will override).
+    /// Apply dfs.* properties from raw_hadoop_props that aren't covered by merge_from_core_site.
+    fn apply_hdfs_site_props(&mut self) {
+        // dfs.namenode.http-address → webhdfs_url (only if not already set by fs.defaultFS)
+        if self.webhdfs_url.is_none() {
+            if let Some(addr) = self.raw_hadoop_props.get("dfs.namenode.http-address").cloned() {
+                if !addr.is_empty() {
+                    self.webhdfs_url = Some(if addr.starts_with("http") {
+                        addr
+                    } else {
+                        format!("http://{}", addr)
+                    });
+                }
+            }
+        }
+        // dfs.namenode.rpc-address → namenode_uri (only if fs.defaultFS not set)
+        if self.namenode_uri.is_empty() {
+            if let Some(addr) = self.raw_hadoop_props.get("dfs.namenode.rpc-address").cloned() {
+                if !addr.is_empty() {
+                    self.namenode_uri = if addr.starts_with("hdfs://") {
+                        addr
+                    } else {
+                        format!("hdfs://{}", addr)
+                    };
+                }
+            }
+        }
+    }
+
+    /// Load the default per-user profile from `~/.hfs/profile.env`.
+    /// Silently skips if the file does not exist.
     fn merge_from_profile_env(&mut self) {
         let home = match std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
             Ok(h) => h,
             Err(_) => return,
         };
-        let profile_path = PathBuf::from(home).join(".hfs").join("profile.env");
-        let content = match std::fs::read_to_string(&profile_path) {
+        let path = PathBuf::from(home).join(".hfs").join("profile.env");
+        self.merge_from_env_file(&path);
+    }
+
+    /// Parse a .env profile file and merge into this config.
+    ///
+    /// Format: `KEY=VALUE` lines (shell-style). Values may be quoted with `"` or `'`.
+    /// Lines starting with `#` and blank lines are ignored.
+    ///
+    /// Supported keys:
+    ///   HFS_NAMENODE      — NameNode address (same formats as --namenode)
+    ///   HFS_USER          — HDFS user for simple auth (alias: HADOOP_USER_NAME)
+    ///   HFS_BACKEND       — rpc | webhdfs | auto
+    ///   HADOOP_CONF_DIR   — path to Hadoop client config dir (loads all XML files)
+    ///   KRB5_PRINCIPAL    — Kerberos principal (e.g. hdfs/nn.corp@REALM)
+    ///   KRB5_KEYTAB       — path to keytab file
+    ///
+    /// Fields already set by higher-priority sources are NOT overwritten.
+    /// Silently skips if the file does not exist or is unreadable.
+    pub fn merge_from_env_file(&mut self, path: &Path) {
+        let content = match std::fs::read_to_string(path) {
             Ok(c) => c,
-            Err(_) => return, // file absent or unreadable — silently skip
+            Err(_) => return,
         };
         for line in content.lines() {
             let line = line.trim();
             if line.is_empty() || line.starts_with('#') {
                 continue;
             }
-            if let Some((key, value)) = line.split_once('=') {
+            if let Some((key, raw_value)) = line.split_once('=') {
                 let key = key.trim();
-                let value = value.trim().trim_matches('"').trim_matches('\'');
-                match key {
-                    "HFS_NAMENODE" => {
-                        if self.webhdfs_url.is_none() && self.namenode_uri.is_empty() {
-                            self.apply_namenode_str(value);
-                        }
-                    }
-                    "HFS_USER" | "HADOOP_USER_NAME" => {
-                        if self.hdfs_user.is_none() {
-                            self.hdfs_user = Some(value.to_string());
-                        }
-                    }
-                    "HFS_BACKEND" => {
-                        if self.preferred_backend == "auto" {
-                            self.preferred_backend = value.to_string();
-                        }
-                    }
-                    "HADOOP_CONF_DIR" => {
-                        // Re-parse core-site.xml from this dir (only if not already loaded)
-                        if self.raw_hadoop_props.is_empty() {
-                            let site = PathBuf::from(value).join("core-site.xml");
-                            let _ = self.merge_from_core_site(&site);
-                        }
-                    }
-                    "KRB5_PRINCIPAL" => {
-                        if self.kerberos_principal.is_none() {
-                            self.kerberos_principal = Some(value.to_string());
-                        }
-                    }
-                    "KRB5_KEYTAB" => {
-                        if self.keytab_path.is_none() {
-                            self.keytab_path = Some(PathBuf::from(value));
-                        }
-                    }
-                    _ => {} // unknown key — ignore
+                // Strip optional surrounding quotes from the value
+                let value = raw_value.trim().trim_matches('"').trim_matches('\'');
+                self.apply_env_key(key, value);
+            }
+        }
+    }
+
+    /// Apply a single KEY=VALUE pair from an env file or environment variable.
+    fn apply_env_key(&mut self, key: &str, value: &str) {
+        match key {
+            "HFS_NAMENODE" => {
+                if self.webhdfs_url.is_none() && self.namenode_uri.is_empty() {
+                    self.apply_namenode_str(value);
                 }
             }
+            "HFS_USER" | "HADOOP_USER_NAME" => {
+                if self.hdfs_user.is_none() {
+                    self.hdfs_user = Some(value.to_string());
+                }
+            }
+            "HFS_BACKEND" => {
+                if self.preferred_backend == "auto" {
+                    self.preferred_backend = value.to_string();
+                }
+            }
+            "HADOOP_CONF_DIR" => {
+                // Load all Hadoop XML config files from this directory.
+                // Only if not already loaded from /etc/hadoop/conf.
+                if self.raw_hadoop_props.is_empty() {
+                    self.load_hadoop_conf_dir(&PathBuf::from(value));
+                }
+            }
+            "KRB5_PRINCIPAL" => {
+                if self.kerberos_principal.is_none() {
+                    self.kerberos_principal = Some(value.to_string());
+                }
+            }
+            "KRB5_KEYTAB" => {
+                if self.keytab_path.is_none() {
+                    self.keytab_path = Some(PathBuf::from(value));
+                }
+            }
+            _ => {} // unknown key — ignore
         }
     }
 
@@ -190,6 +266,7 @@ impl HdfsConfig {
     }
 
     fn merge_from_env(&mut self) {
+        // Env vars always override profile.env — so we write directly, not via apply_env_key.
         if let Ok(nn) = std::env::var("HFS_NAMENODE") {
             self.apply_namenode_str(&nn);
         }
@@ -198,6 +275,10 @@ impl HdfsConfig {
         }
         if let Ok(backend) = std::env::var("HFS_BACKEND") {
             self.preferred_backend = backend;
+        }
+        if let Ok(dir) = std::env::var("HADOOP_CONF_DIR") {
+            // HADOOP_CONF_DIR from env overrides profile.env setting
+            self.load_hadoop_conf_dir(&PathBuf::from(dir));
         }
     }
 
@@ -426,5 +507,66 @@ mod tests {
         cfg.merge_from_core_site(&tmp.path().to_path_buf())
             .expect("merge should succeed");
         assert_eq!(cfg.namenode_uri, "hdfs://namenode:8020");
+    }
+
+    #[test]
+    fn test_merge_from_env_file_sets_namenode_and_user() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().expect("tmp file");
+        writeln!(tmp, "# comment").unwrap();
+        writeln!(tmp, "HFS_NAMENODE=hdfs://nn.test:8020").unwrap();
+        writeln!(tmp, "HFS_USER=testuser").unwrap();
+        writeln!(tmp, "HFS_BACKEND=rpc").unwrap();
+        let mut cfg = HdfsConfig::default();
+        cfg.merge_from_env_file(tmp.path());
+        assert_eq!(cfg.namenode_uri, "hdfs://nn.test:8020");
+        assert_eq!(cfg.hdfs_user.as_deref(), Some("testuser"));
+        assert_eq!(cfg.preferred_backend, "rpc");
+    }
+
+    #[test]
+    fn test_merge_from_env_file_hadoop_conf_dir_loads_xml() {
+        use std::fs;
+        use std::io::Write;
+        // Write a temp core-site.xml in a temp dir
+        let dir = tempfile::tempdir().expect("tmp dir");
+        let xml_path = dir.path().join("core-site.xml");
+        fs::write(&xml_path, MINIMAL_XML).expect("write xml");
+
+        // Write a .env file referencing the temp dir
+        let mut env_file = tempfile::NamedTempFile::new().expect("tmp env file");
+        writeln!(env_file, "HADOOP_CONF_DIR={}", dir.path().display()).unwrap();
+
+        let mut cfg = HdfsConfig::default();
+        cfg.merge_from_env_file(env_file.path());
+        // HADOOP_CONF_DIR in env file should load core-site.xml → namenode_uri
+        assert_eq!(cfg.namenode_uri, "hdfs://namenode:8020");
+    }
+
+    #[test]
+    fn test_merge_from_env_file_quoted_values() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().expect("tmp file");
+        writeln!(tmp, r#"HFS_USER="myuser""#).unwrap();
+        writeln!(tmp, "HFS_BACKEND='webhdfs'").unwrap();
+        let mut cfg = HdfsConfig::default();
+        cfg.merge_from_env_file(tmp.path());
+        assert_eq!(cfg.hdfs_user.as_deref(), Some("myuser"));
+        assert_eq!(cfg.preferred_backend, "webhdfs");
+    }
+
+    #[test]
+    fn test_effective_user_defaults_to_hdfs() {
+        let cfg = HdfsConfig::default();
+        assert_eq!(cfg.effective_user(), "hdfs");
+    }
+
+    #[test]
+    fn test_effective_user_returns_configured() {
+        let cfg = HdfsConfig {
+            hdfs_user: Some("davide".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(cfg.effective_user(), "davide");
     }
 }

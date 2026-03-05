@@ -10,7 +10,7 @@ use hfs_core::{HdfsClient, HdfsClientBuilder, HdfsConfig};
 #[command(
     name = "hfs",
     about = "HDFS filesystem tool — no JVM required",
-    version = "0.1.1",
+    version = "0.1.3",
     long_about = None,
 )]
 struct Cli {
@@ -18,6 +18,13 @@ struct Cli {
     /// Default: read from core-site.xml or HFS_NAMENODE env var
     #[arg(long, global = true)]
     namenode: Option<String>,
+
+    /// Environment file with connection settings (overrides ~/.hfs/profile.env).
+    /// Example: hfs --env-file /path/to/prod.env ls /
+    /// Supported keys: HFS_NAMENODE, HFS_USER, HFS_BACKEND, HADOOP_CONF_DIR,
+    ///                 KRB5_PRINCIPAL, KRB5_KEYTAB
+    #[arg(long, global = true, value_name = "FILE")]
+    env_file: Option<std::path::PathBuf>,
 
     /// Force backend: rpc | webhdfs | auto (default)
     #[arg(long, global = true, default_value = "auto")]
@@ -130,7 +137,7 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Build config from env/file, then apply CLI overrides.
-    let mut config = HdfsConfig::load()?;
+    let mut config = HdfsConfig::load(cli.env_file.as_deref())?;
     if let Some(ref nn) = cli.namenode {
         config.apply_namenode_str(nn);
     }
