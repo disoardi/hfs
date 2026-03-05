@@ -5,6 +5,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use comfy_table::{presets::UTF8_FULL_CONDENSED, Table};
 use hfs_core::{HdfsClient, HdfsClientBuilder, HdfsConfig};
+use hfs_schema::{HdfsRangeReader, ParquetInspector};
 
 #[derive(Parser)]
 #[command(
@@ -173,6 +174,15 @@ async fn main() -> Result<()> {
         }
         Commands::Health => {
             cmd_health(client.as_ref(), &cli.output).await?;
+        }
+        Commands::Schema { path, against: _ } => {
+            cmd_schema(client.as_ref(), path, &cli.output).await?;
+        }
+        Commands::Stats { path } => {
+            cmd_stats(client.as_ref(), path, &cli.output).await?;
+        }
+        Commands::Rowcount { path } => {
+            cmd_rowcount(client.as_ref(), path, &cli.output).await?;
         }
         Commands::Capabilities => {
             println!("hfs v0.1.0-dev");
@@ -353,7 +363,114 @@ async fn cmd_health(client: &dyn HdfsClient, output_format: &str) -> Result<()> 
     Ok(())
 }
 
+async fn cmd_schema(client: &dyn HdfsClient, path: &str, output_format: &str) -> Result<()> {
+    let reader = HdfsRangeReader::new(client, path);
+    let meta = ParquetInspector::inspect(&reader, path).await?;
+
+    if output_format == "json" {
+        println!("{}", serde_json::to_string_pretty(&meta.schema)?);
+        return Ok(());
+    }
+
+    println!("Path:        {}", path);
+    println!("Rows:        {}", meta.row_count);
+    println!("Row groups:  {}", meta.row_group_count);
+    if let Some(ref by) = meta.created_by {
+        println!("Created by:  {}", by);
+    }
+    println!();
+
+    let mut table = Table::new();
+    table.load_preset(UTF8_FULL_CONDENSED);
+    table.set_header(["Column", "Type", "Nullable"]);
+    for field in &meta.schema.fields {
+        table.add_row([
+            field.name.as_str(),
+            &format_field_type(&field.field_type),
+            if field.nullable { "yes" } else { "no" },
+        ]);
+    }
+    println!("{}", table);
+    Ok(())
+}
+
+async fn cmd_stats(client: &dyn HdfsClient, path: &str, output_format: &str) -> Result<()> {
+    let reader = HdfsRangeReader::new(client, path);
+    let meta = ParquetInspector::inspect(&reader, path).await?;
+
+    if output_format == "json" {
+        println!("{}", serde_json::to_string_pretty(&meta.column_stats)?);
+        return Ok(());
+    }
+
+    let mut table = Table::new();
+    table.load_preset(UTF8_FULL_CONDENSED);
+    table.set_header(["Column", "Type", "Nulls", "Distinct", "Min", "Max"]);
+    for cs in &meta.column_stats {
+        table.add_row([
+            cs.name.as_str(),
+            &format_field_type(&cs.field_type),
+            &cs.null_count
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "-".to_string()),
+            &cs.distinct_count
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "-".to_string()),
+            cs.min_value.as_deref().unwrap_or("-"),
+            cs.max_value.as_deref().unwrap_or("-"),
+        ]);
+    }
+    println!("{}", table);
+    Ok(())
+}
+
+async fn cmd_rowcount(client: &dyn HdfsClient, path: &str, output_format: &str) -> Result<()> {
+    let reader = HdfsRangeReader::new(client, path);
+    let meta = ParquetInspector::inspect(&reader, path).await?;
+
+    if output_format == "json" {
+        println!(
+            "{}",
+            serde_json::json!({ "path": path, "rows": meta.row_count })
+        );
+        return Ok(());
+    }
+
+    println!("{}\t{}", meta.row_count, path);
+    Ok(())
+}
+
 // ─── Formatting helpers ───────────────────────────────────────────────────────
+
+/// Format a FieldType as a short human-readable string (SQL-like notation).
+fn format_field_type(ft: &hfs_schema::FieldType) -> String {
+    use hfs_schema::FieldType;
+    match ft {
+        FieldType::Boolean => "BOOLEAN".to_string(),
+        FieldType::Int8 => "TINYINT".to_string(),
+        FieldType::Int16 => "SMALLINT".to_string(),
+        FieldType::Int32 => "INT".to_string(),
+        FieldType::Int64 => "BIGINT".to_string(),
+        FieldType::Float32 => "FLOAT".to_string(),
+        FieldType::Float64 => "DOUBLE".to_string(),
+        FieldType::Decimal { precision, scale } => format!("DECIMAL({},{})", precision, scale),
+        FieldType::Utf8 | FieldType::LargeUtf8 => "STRING".to_string(),
+        FieldType::Binary | FieldType::LargeBinary => "BINARY".to_string(),
+        FieldType::Date32 | FieldType::Date64 => "DATE".to_string(),
+        FieldType::Timestamp { timezone: Some(tz) } => format!("TIMESTAMP({})", tz),
+        FieldType::Timestamp { timezone: None } => "TIMESTAMP".to_string(),
+        FieldType::List(inner) => format!("ARRAY<{}>", format_field_type(inner)),
+        FieldType::Map { key, value } => {
+            format!(
+                "MAP<{},{}>",
+                format_field_type(key),
+                format_field_type(value)
+            )
+        }
+        FieldType::Struct(_) => "STRUCT<...>".to_string(),
+        FieldType::Unknown(s) => s.clone(),
+    }
+}
 
 /// Format a byte count as human-readable (KB, MB, GB, TB).
 fn format_size(bytes: u64) -> String {

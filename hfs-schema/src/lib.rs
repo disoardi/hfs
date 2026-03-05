@@ -13,13 +13,15 @@
 pub mod avro;
 pub mod hive;
 pub mod parquet;
+pub mod reader;
 pub mod schema;
 
 #[cfg(feature = "orc")]
 pub mod orc;
 
 pub use avro::AvroInspector;
-pub use parquet::ParquetInspector;
+pub use parquet::{ColumnStats, ParquetInspector, ParquetMeta};
+pub use reader::HdfsRangeReader;
 pub use schema::{DiffResult, Field, FieldType, Schema, SchemaDiff};
 
 #[cfg(feature = "hive")]
