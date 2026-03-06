@@ -74,8 +74,9 @@ impl HdfsClientBuilder {
     }
 
     async fn build_auto(config: &HdfsConfig) -> Box<dyn HdfsClient> {
-        let webhdfs =
-            || WebHdfsClient::new_with_user(&config.effective_webhdfs_url(), config.effective_user());
+        let webhdfs = || {
+            WebHdfsClient::new_with_user(&config.effective_webhdfs_url(), config.effective_user())
+        };
 
         // Only attempt RPC when we have an explicit hdfs:// URI.
         if config.namenode_uri.starts_with("hdfs://") {
@@ -83,8 +84,7 @@ impl HdfsClientBuilder {
             // Set HADOOP_USER_NAME before Client::new() so hdfs-native doesn't probe the OS.
             Self::set_hadoop_user(config.effective_user());
             // Also wrap in catch_unwind in case user resolution still fails.
-            let rpc_init =
-                std::panic::catch_unwind(AssertUnwindSafe(|| RpcClient::new(&uri)));
+            let rpc_init = std::panic::catch_unwind(AssertUnwindSafe(|| RpcClient::new(&uri)));
 
             if let Ok(Ok(rpc)) = rpc_init {
                 let probe =

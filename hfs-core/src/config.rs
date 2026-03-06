@@ -112,8 +112,12 @@ impl HdfsConfig {
     ///   dfs.namenode.rpc-address           → namenode_uri (hdfs://host:port)
     ///   hadoop.security.authentication     → kerberos indicator
     pub fn load_hadoop_conf_dir(&mut self, dir: &Path) {
-        const HADOOP_XML_FILES: &[&str] =
-            &["core-site.xml", "hdfs-site.xml", "mapred-site.xml", "yarn-site.xml"];
+        const HADOOP_XML_FILES: &[&str] = &[
+            "core-site.xml",
+            "hdfs-site.xml",
+            "mapred-site.xml",
+            "yarn-site.xml",
+        ];
 
         for filename in HADOOP_XML_FILES {
             let path = dir.join(filename);
@@ -130,7 +134,11 @@ impl HdfsConfig {
     fn apply_hdfs_site_props(&mut self) {
         // dfs.namenode.http-address → webhdfs_url (only if not already set by fs.defaultFS)
         if self.webhdfs_url.is_none() {
-            if let Some(addr) = self.raw_hadoop_props.get("dfs.namenode.http-address").cloned() {
+            if let Some(addr) = self
+                .raw_hadoop_props
+                .get("dfs.namenode.http-address")
+                .cloned()
+            {
                 if !addr.is_empty() {
                     self.webhdfs_url = Some(if addr.starts_with("http") {
                         addr
@@ -142,7 +150,11 @@ impl HdfsConfig {
         }
         // dfs.namenode.rpc-address → namenode_uri (only if fs.defaultFS not set)
         if self.namenode_uri.is_empty() {
-            if let Some(addr) = self.raw_hadoop_props.get("dfs.namenode.rpc-address").cloned() {
+            if let Some(addr) = self
+                .raw_hadoop_props
+                .get("dfs.namenode.rpc-address")
+                .cloned()
+            {
                 if !addr.is_empty() {
                     self.namenode_uri = if addr.starts_with("hdfs://") {
                         addr
@@ -293,7 +305,10 @@ impl HdfsConfig {
             // Bare host:port — infer intent from port number.
             // 9870 (Hadoop 3.x WebHDFS) or 50070 (Hadoop 2.x/HDP WebHDFS) → HTTP.
             // 8020/8021 (HDFS RPC) or unknown → namenode_uri so auto probes RPC first.
-            let port = nn.split(':').next_back().and_then(|p| p.parse::<u16>().ok());
+            let port = nn
+                .split(':')
+                .next_back()
+                .and_then(|p| p.parse::<u16>().ok());
             match port {
                 Some(9870) | Some(50070) => {
                     self.webhdfs_url = Some(format!("http://{}", nn));

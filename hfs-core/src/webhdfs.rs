@@ -750,7 +750,10 @@ mod tests {
     async fn test_stat_not_found_returns_error() {
         let mut server = Server::new_async().await;
         let mock = server
-            .mock("GET", "/webhdfs/v1/no/such/path?op=GETFILESTATUS&user.name=hdfs")
+            .mock(
+                "GET",
+                "/webhdfs/v1/no/such/path?op=GETFILESTATUS&user.name=hdfs",
+            )
             .with_status(200) // WebHDFS may return 200 with RemoteException body
             .with_header("content-type", "application/json")
             .with_body(GETFILESTATUS_NOT_FOUND)
